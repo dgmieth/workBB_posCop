@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en" class="h-100 w-100">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Análise de registros da base</title>
+    <link rel="stylesheet" href="/css/bootstrap/bootstrap.css">
+    <link rel="stylesheet" href="/css/header.css">
+    <link rel="stylesheet" href="/css/mainPage.css">
+    <link rel="stylesheet" href="/css/footer.css">
+    <link rel="stylesheet" href="/css/relProtAbertos/relProtAbertos.css">
+    <link rel="stylesheet" href="/css/datatables/dataTables.min.css">
+    <link rel="stylesheet" href="/css/datatables/select.dataTables.min.css">
+    <link rel="stylesheet" href="/css/datatables/jquery.dataTables.min.css">
+    <link rel="stylesheet" href="/css/datatables/fixedHeader.dataTables.css">
+    <link rel="stylesheet" href="/css/datatables/dataTables.css">
+    <!-- BUTTONS - DATATABLES -->
+    <link rel="stylesheet" href="/css/datatables/buttons.DataTables.min.css">
+    <link rel="icon" type="image/ico" href="/img/bbFavicon.ico">
+</head>
+<body class="h-100 w-100">
+    <header style="height: 15%!important;">{{> header}}</header>
+<!-- ================================================================================================= -->
+<!--RelProtAbertos Page - INICIO - DATATABLE -->
+    <div id="configurationControls" class=".container-fluid w-100" style="height:76%!important;">
+        <div id="spinner" class="container-fluid mx-auto my-auto text-center h-100 w-100" style="display: block;">
+            <img src="/img/spinner.gif" alt="" >
+        </div>
+        <div class=".container-fluid mx-auto my-auto text-center h-100 w-100">
+            <div id="flexBoxPrefixos" class="d-flex flex-wrap justify-content-center" style="height: 14%!important;overflow-y:auto">
+
+            </div>
+            <div id="mainContent" class=".container-fluid mx-auto my-auto w-100 text-center" style="display: none;overflow-y:auto;height:92%!important">
+
+            </div>
+        </div>
+    </div>
+<!--RelProtAbertos Page - FIM - DATATABLE -->
+<!-- ================================================================================================= -->
+<style>
+    .footer{
+        position: absolute;
+        bottom:0;
+        width: 100%;
+        height: 4%!important;
+        
+        background-color: rgb(26, 50, 156);
+    }
+</style>
+    <footer class="footer">
+        <div class="container">
+            <span class="text-muted">
+                {{appInfo.footerBanco}}
+            </span>
+        </div>
+
+    </footer>
+    
+</body>
+    <script src="/js/datatables/jquery-3.5.1.js"></script>
+    <script src="/js/jquery/jquery.slim.min.js"></script>
+    <script src="/js/bootstrap/bootstrap.bundle.min.js"></script>
+
+<<!-- BUTTONS - DATATABLES -->
+
+<<!-- CUSTOMIZED JS -->
+    <script src="/js/analiseBase/appCtrl.js"></script>
+    <script src="/js/analiseBase/dataCtrl.js"></script>
+    <script src="/js/analiseBase/uiCtrl.js"></script>
+    <script src="/js/analiseBase/main.js"></script>
+
+</html>

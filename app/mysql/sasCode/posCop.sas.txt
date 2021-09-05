@@ -1,0 +1,360 @@
+%LET dirProjeto = /dados/recup/gecor_servicos/area_credito;
+
+/*	+------------+
+	Este program serve para centralizar todos os mapeamentos e atribuições que serão utilizadas no processamento.
+	Todas as variáveis e libnames devem estar atribuidas neste program.
+*/
+
+/* MApeamento dos Diretórios */
+libname lbGs "/dados/recup/gecor_servicos";
+LIBNAME DB2PAJ DB2 AUTHDOMAIN=DB2SRCIT SCHEMA=DB2PAJ DATABASE=BDB2P04;
+LIBNAME DB2MST DB2 AUTHDOMAIN=DB2SRCIT SCHEMA=DB2MST DATABASE=BDB2P04;
+libname GEGUD "/dados/recup/gered/gejud";
+
+/* Dados de configuração para Exportação ao MySQL */
+%LET ip 		= 172.16.12.49;	/* sem aspas */
+%LET usuario	= 'root';	/* aspas simples */
+%LET senha		= 'agoravai';	/* aspas simples */
+%LET banco		= creditoPosCop;		/* sem aspas */
+%LET arquivo	= diraoFinalTable.tmp; 	/* nome definido por vocês */
+
+/* Formato de Datetime para o MySQL */
+PROC FORMAT;
+picture datetimemysql other = '%Y-%0m-%0d' (datatype=date);
+RUN;
+
+PROC SQL;
+   CONNECT TO DB2 (AUTHDOMAIN='DB2SRCIT' DATABASE=BDB2P04);
+   CREATE TABLE BASE_PAJ AS
+   SELECT DISTINCT 
+		*	
+   FROM connection to DB2
+   (SELECT DISTINCT 
+		TRIM(SUBSTR(CHAR(T3.NR_UNCO_CTR_OPR), 1, 18)) AS NR_UNCO_ORIGINAL,
+		T1.NR_PRC,
+		T1.CD_TIP_EST_PRC,
+		T3.CD_EST_CDU,
+		T2.CD_EST_VCL_OPR,
+		T1.CD_TIP_RLC_BCO_PRC,
+		T1.DT_AJZT,
+		T1.DT_BXA_PRC,
+		T1.DT_PTL_JRD,
+		TRIM(SUBSTR(CHAR(T4.NR_UNCO_CTR_VCLD), 1, 18)) AS NR_UNCO_OPR_NOVA,
+		t7.CD_PSS_CTR_OPR as MCI_OPR,
+		T4.DT_VCL_CTR,
+		t5.CD_EST_CDU as CD_EST_CDU_NOVA,
+		T5.SG_SIS_RSP_CDU, 
+        t5.CD_PRF_DEPE_CDU, 
+        t5.NR_CTR_OPR, 
+        t5.CD_PRD, 
+        t5.CD_MDLD,
+		t5.DT_FRMZ,
+		T6.DTA_HORA_RGTO_FORM AS DT_COP
+ 
+   FROM 
+	DB2PAJ.PRC_ITSE_JRD AS T1
+   LEFT JOIN 
+	DB2PAJ.OPR_CMTD_PRC_ATU AS T2
+             ON (T1.NR_PRC = T2.NR_PRC)
+   LEFT JOIN 
+	DB2PAJ.OPR_ITSE_JRD AS T3
+             ON (T2.NR_OPR_ITSE_JRD = T3.NR_OPR_ITSE_JRD)
+   INNER JOIN
+   	DB2OPR.VCL_CTR AS T4
+			ON (T3.NR_UNCO_CTR_OPR = T4.NR_UNCO_CTR_OPR AND T1.DT_AJZT < T4.DT_VCL_CTR)
+	LEFT JOIN
+   	DB2OPR.CTR_OPR AS T5
+			ON (T4.NR_UNCO_CTR_VCLD = T5.NR_UNCO_CTR_OPR)
+	LEFT JOIN
+	DB2OPR.PRTC_PSS_CTR_OPR AS T7
+			ON (T4.NR_UNCO_CTR_VCLD = T7.NR_UNCO_CTR_OPR)
+	LEFT JOIN
+	DB2COP.TCOP100 AS T6
+			ON (T4.NR_UNCO_CTR_VCLD = T6.NRO_OPER_BASE_OPR)
+	LEFT JOIN 
+	DB2PAJ.OPR_ITSE_JRD AS T3
+			ON (T4.NR_UNCO_CTR_VCLD = T3.NR_UNCO_CTR_OPR)
+	WHERE  t2.CD_TIP_VCLC_OPR = 'B' 
+	AND T3.NR_UNCO_CTR_OPR > 0 
+	AND (T3.NR_UNCO_CTR_OPR <> T4.NR_UNCO_CTR_VCLD) 
+	AND T5.SG_SIS_RSP_CDU IN ('COP', 'XER')
+	AND T7.CD_TIP_PRTC = 1 AND T7.NR_SEQL_PRTC = 1
+	) A
+	LEFT JOIN Connection to DB2 ( 
+         SELECT DISTINCT
+		 TRIM(SUBSTR(CHAR(Z.NR_UNCO_CTR_OPR), 1, 18)) AS NR_UNCO_OPR_2,
+		 X.DT_AJZT AS DT_AJZT_2,
+		 X.NR_PRC AS NR_PRC_2,
+		 X.CD_TIP_EST_PRC AS CD_EST_2
+
+	FROM DB2PAJ.PRC_ITSE_JRD AS X
+	INNER JOIN  
+	DB2PAJ.OPR_CMTD_PRC_ATU AS Y
+		 	ON (X.NR_PRC = Y.NR_PRC)
+	INNER JOIN
+	DB2PAJ.OPR_ITSE_JRD AS Z
+             ON (Y.NR_OPR_ITSE_JRD = Z.NR_OPR_ITSE_JRD)
+	WHERE Y.CD_TIP_VCLC_OPR = 'B' 
+	) B
+	ON (A.NR_UNCO_OPR_NOVA = B.NR_UNCO_OPR_2)/*
+	WHERE A.NR_PRC <> B.NR_PRC_NOVO */
+;
+DISCONNECT FROM DB2;
+QUIT;
+
+
+PROC SQL;
+	CREATE TABLE BASE_VINCULO AS
+	SELECT DISTINCT
+		  t1.NR_UNCO_ORIGINAL,
+          t1.NR_PRC, 
+		  T1.CD_TIP_EST_PRC,
+		  CASE
+               WHEN T1.CD_TIP_EST_PRC IN (24, 28, 34, 35) THEN 'CANCELADO'
+               WHEN T1.CD_TIP_EST_PRC IN (27, 32, 33, 43) THEN 'ENCERRADO'
+               WHEN T1.CD_TIP_EST_PRC IN (44, 45) THEN 'BLOQUEADO'
+			   WHEN T1.CD_TIP_EST_PRC =. THEN 'NULL'
+               ELSE 'ATIVO'
+          END AS TX_EST_PRC,
+          t1.CD_EST_CDU,  
+          t1.CD_EST_VCL_OPR, 
+          t1.CD_TIP_RLC_BCO_PRC, 
+          t1.DT_AJZT, 
+          t1.DT_BXA_PRC, 
+          t1.DT_PTL_JRD, 
+          t1.NR_UNCO_OPR_NOVA, 
+		  T1.MCI_OPR,
+		  T1.CD_EST_CDU_NOVA,
+		  CASE
+               WHEN CD_EST_CDU_NOVA IN (1, 11) THEN 'Ativa'
+               WHEN CD_EST_CDU_NOVA = 2 THEN 'Liquidada/Encerrada/Inativa'
+			   WHEN CD_EST_CDU_NOVA = 3 THEN 'Transferida'
+			   WHEN CD_EST_CDU_NOVA = 4 THEN 'Pendente de Deferimento'
+			   WHEN CD_EST_CDU_NOVA = 5 THEN 'Conta s/ Movimento'
+			   WHEN CD_EST_CDU_NOVA = 6 THEN 'Bloqueada'
+			   WHEN CD_EST_CDU_NOVA = 7 THEN 'Estornada'
+			   WHEN CD_EST_CDU_NOVA = 8 THEN 'Baixada'
+			   WHEN CD_EST_CDU_NOVA = 9 THEN 'Recomprada'
+			   WHEN CD_EST_CDU_NOVA = 10 THEN 'Não Formalizada'
+			   WHEN CD_EST_CDU_NOVA = 12 THEN 'Contas de Compensação'
+			   WHEN CD_EST_CDU_NOVA = 13 THEN 'Indeferida'
+               ELSE 'Null'
+          END AS TX_EST_CDU,
+          t1.DT_VCL_CTR, 
+          t1.SG_SIS_RSP_CDU, 
+          t1.CD_PRF_DEPE_CDU, 
+          t1.NR_CTR_OPR, 
+          t1.CD_PRD, 
+          t1.CD_MDLD, 
+          t1.DT_FRMZ, 
+          t1.DT_COP,
+          t1.NR_PRC_2, 
+		  CASE 
+			    WHEN t1.NR_PRC <> t1.NR_PRC_2 AND t1.NR_PRC_2 IS NOT MISSING THEN 2 /*VINCULADA EM PROCESSO DISTINTO*/
+				WHEN t1.NR_PRC = t1.NR_PRC_2 THEN 1	/*VINCULADA NO PROCESSO ORIGINAL*/			
+				ELSE 0 /*NÃO VINCULADA*/
+			END AS CD_NR_PRC,
+		  T1.DT_AJZT_2,
+          t1.CD_EST_2,
+		  CASE
+               WHEN T1.CD_EST_2 IN (24, 28, 34, 35) THEN 'CANCELADO'
+               WHEN T1.CD_EST_2 IN (27, 32, 33, 43) THEN 'ENCERRADO'
+               WHEN T1.CD_EST_2 IN (44, 45) THEN 'BLOQUEADO'
+			   WHEN T1.CD_EST_2 =. THEN 'NULL'
+               ELSE 'ATIVO'
+          END AS TX_EST_PRC_2
+		  
+
+      FROM WORK.BASE_PAJ t1
+	  LEFT JOIN DB2MST.TAB_DEPE_CFMD_BCRO T2
+	  ON (t1.CD_PRF_DEPE_CDU = t2.CD_PRF_DEPE)
+	  WHERE T2.DT_ATL_REG = intnx('month',today(),-1,'E') AND T2.CD_ORD_SBDD=0 AND T2.CD_PRF_DRTA = 8595;
+QUIT;
+
+
+PROC SQL;
+	CREATE TABLE BASE_VCL_ACRD AS
+	SELECT DISTINCT 
+		A.*,
+		B.IN_REG_ATI AS ACRD_ATIVO,
+		DATEPART(B.TS_INCL_ACRD) FORMAT=DATE9. AS DT_ACRD,
+		D.DT_PGTO_ACRD,
+		C.IN_REG_ATI AS ACRD_ATIVO_2,
+		DATEPART(C.TS_INCL_ACRD) FORMAT=DATE9. AS DT_ACRD_2,
+		E.DT_PGTO_ACRD AS DT_PGTO_ACRD_2
+
+		FROM WORK.BASE_VINCULO A
+		LEFT JOIN DB2PAJ.ACRD_PRC B
+		ON (A.NR_PRC = B.NR_PRC)
+		LEFT JOIN DB2PAJ.ACRD_PRC C
+		ON (A.NR_PRC_2 = C.NR_PRC)
+		LEFT JOIN DB2PAJ.ACRD_AV D
+		ON (A.NR_PRC = D.NR_PRC)
+		LEFT JOIN DB2PAJ.ACRD_AV E
+		ON (A.NR_PRC_2 = E.NR_PRC);
+QUIT;
+
+PROC SQL;
+	CREATE TABLE WORK.BASE_VCL_ACRD AS
+	SELECT DISTINCT 
+	      t1.NR_UNCO_ORIGINAL AS NR_UNCO_CTR_OPR,  
+          T1.MCI_OPR AS MCI,
+		  t1.NR_PRC, 
+          t1.CD_TIP_EST_PRC, 
+          t1.TX_EST_PRC, 
+          t1.CD_EST_CDU, 
+          t1.CD_EST_VCL_OPR, 
+          t1.CD_TIP_RLC_BCO_PRC, 
+          t1.DT_AJZT, 
+          t1.DT_BXA_PRC, 
+          t1.DT_PTL_JRD, 
+          t1.NR_UNCO_OPR_NOVA AS NR_UNCO_CTR_VCLD, 
+		  
+          t1.CD_EST_CDU_NOVA, 
+          t1.TX_EST_CDU, 
+          min(t1.DT_VCL_CTR) as DT_VCL_CTR, 
+          t1.SG_SIS_RSP_CDU AS SG_SIS_RSP_CDU_VCLD, 
+          t1.CD_PRF_DEPE_CDU AS CD_PRF_DEPE_CDU_VCLD, 
+		  CASE 
+			    WHEN T1.CD_NR_PRC = 2 THEN 'Vinculada em outro NPJ'
+				WHEN T1.CD_NR_PRC = 1 THEN 'Vinculada'			
+				ELSE 'Operacao nao vinculada'
+			END AS TX_NR_PRC_VCLD,	
+          t1.NR_CTR_OPR, 
+          t1.CD_PRD, 
+          t1.CD_MDLD, 
+          t1.DT_FRMZ, 
+          t1.DT_COP, 
+          t1.NR_PRC_2 AS NR_PRC_VCLD,
+		  /*T1.CD_NR_PRC ,*/
+			
+          t1.DT_AJZT_2 AS DT_AJZT_VCLD, 
+          t1.CD_EST_2 AS CD_EST_VCLD, 
+          t1.TX_EST_PRC_2 AS TX_EST_VCLD, 
+          t1.ACRD_ATIVO, 
+          t1.DT_ACRD, 
+		  CASE
+               WHEN t1.DT_PGTO_ACRD NE . THEN 'S'
+               ELSE '.'
+          END AS ACRD_AV,
+          t1.ACRD_ATIVO_2 AS ACRD_ATIVO_NOVO, 
+		  CASE			
+		  	WHEN t1.ACRD_ATIVO = 'S'
+			THEN 1
+			ELSE 0
+		  END AS VLDC_REG_ACRD,
+          t1.DT_ACRD_2 AS DT_ACRD_NOVO,
+		  CASE
+               WHEN t1.DT_PGTO_ACRD_2 NE . THEN 'S'
+               ELSE '.'
+          END AS ACRD_AV_2 AS ACRD_AV_NOVO
+      FROM WORK.BASE_VCL_ACRD t1;
+QUIT;
+PROC SQL stimer;
+LIBNAME TEMP DB2 AUTHDOMAIN='DB2SRCIT' SCHEMA=SESSION DATABASE=BDB2P04 CONNECTION=GLOBAL;
+CONNECT TO DB2 as con1  (AUTHDOMAIN='DB2SRCIT' DATABASE=BDB2P04 CONNECTION=GLOBAL);
+EXECUTE (declare global temporary table NPJS (NPJ BIGINT) on commit PRESERVE rows not logged) BY con1;
+INSERT INTO TEMP.NPJS 
+SELECT DISTINCT 
+	T1.NR_PRC 
+FROM WORK.BASE_VCL_ACRD T1;
+CREATE TABLE WORK.FINAL AS
+SELECT DISTINCT
+	t.VLDC_REG_ACRD,
+	t.NR_UNCO_CTR_OPR,
+	t.MCI,
+	t.NR_UNCO_CTR_VCLD,
+	t.SG_SIS_RSP_CDU_VCLD,
+	t.CD_PRF_DEPE_CDU_VCLD,
+	t.NR_PRC,
+	t.TX_EST_PRC,
+	t.DT_AJZT FORMAT=YYMMDDD10. as DT_AJZT,
+	t.DT_BXA_PRC FORMAT=YYMMDDD10. as DT_BXA_PRC,
+	t.NR_PRC_VCLD,
+	t.TX_EST_VCLD,	
+	t.DT_AJZT_VCLD FORMAT=YYMMDDD10. as DT_AJZT_VCLD,
+	t.TX_NR_PRC_VCLD,
+	t.ACRD_ATIVO,
+	t6.qtd_adv,
+	t.CD_TIP_EST_PRC,
+	t.CD_EST_CDU, 
+    t.CD_EST_VCL_OPR, 
+    t.CD_TIP_RLC_BCO_PRC,
+	t.DT_PTL_JRD FORMAT=YYMMDDD10. as DT_PTL_JRD,
+	t.CD_EST_CDU_NOVA, 
+    t.TX_EST_CDU, 
+    t.DT_VCL_CTR FORMAT=YYMMDDD10. as DT_VCL_CTR,
+	t.NR_CTR_OPR, 
+    t.CD_PRD, 
+    t.CD_MDLD, 
+    t.DT_FRMZ FORMAT=YYMMDDD10. as DT_FRMZ, 
+    DATEPART(t.DT_COP) FORMAT=YYMMDDD10. as DT_COP,
+	t.DT_AJZT_VCLD FORMAT=YYMMDDD10. as DT_AJZT_VCLD, 
+    t.CD_EST_VCLD,
+	t.DT_ACRD FORMAT=YYMMDDD10. as DT_ACRD, 
+	t.ACRD_AV,
+    t.ACRD_ATIVO_NOVO,
+	t.DT_ACRD_NOVO FORMAT=YYMMDDD10. as DT_ACRD_NOVO,
+	t.ACRD_AV_NOVO
+FROM WORK.BASE_VCL_ACRD t
+LEFT JOIN (
+	SELECT DISTINCT
+		T4.*
+	FROM CONNECTION TO con1 
+			(
+			SELECT 
+				T3.NPJ,
+				COUNT(t3.NR_PSS) as qtd_adv
+			FROM (
+					SELECT DISTINCT
+						T1.nr_PSS, 
+						TRIM(LEADING '0' from DIGITS(t2.NR_PRC_PPL)) AS NPJ     
+					FROM DB2PAJ.PSS_CMTD_PRC t1
+					INNER JOIN  SESSION.NPJS w ON w.NPJ = bigint(t2.NR_PRC_PPL)
+					INNER JOIN DB2PAJ.PRC_ITSE_JRD t2 ON (t1.NR_PRC = t2.NR_PRC) 
+					WHERE t1.CD_TIP_RLC_PSS_PRC = 6 AND
+						(CASE
+							WHEN t1.DT_AFT_PSS_PRC<t2.DT_AJZT
+							THEN 1
+							ELSE 0
+						END) = 0
+				) T3
+			GROUP BY t3.NPJ
+			) T4 
+			) T6 ON t.NR_PRC = input(T6.NPJ,best11.);           
+DISCONNECT FROM con1;
+CREATE TABLE work.FINAL_FINAL AS
+SELECT
+	t.*
+FROM WORK.FINAL t;	
+QUIT;
+/* Exporta os dados da tabela gerada (DMD_SUB) para um arquivo temporário  **/
+PROC EXPORT
+    DATA=WORK.FINAL_FINAL /* Tabela que será exportada*/
+    OUTFILE= "&dirProjeto./finalDiraoTable.tmp" /*arquivo para exportação gerado */
+    DBMS=dlm REPLACE;
+    PUTNAMES=no;
+    DELIMITER=';';
+RUN;
+
+/*  Executa os comandos do MySQL no terminal linux */
+DATA _NULL_;
+	x cd /dados/recup/geinf/ginfo/utilitarios;
+	
+	/* Zera a tabela de exportação */
+	x ./mysql -h &ip. -u &usuario. -p&senha. --database="&banco." --execute="TRUNCATE diraoNovaBaseMigracao"; 
+
+	/* Insere os dados do arquivo de exportação na tabela destino */
+	x ./mysql -h &ip. -u &usuario. -p&senha. --database="&banco." --execute="LOAD DATA LOW_PRIORITY LOCAL INFILE '&dirProjeto/finalDiraoTable.tmp' INTO TABLE diraoNovaBaseMigracao FIELDS TERMINATED BY ';' LINES TERMINATED BY '\n'";
+
+	x ./mysql -h &ip. -u &usuario. -p&senha. --database="&banco." --execute="UPDATE creditoPosCop.diraoNovaBaseMigracao SET TX_EST_VCLD = NULL WHERE TX_EST_VCLD='NULL'";
+
+	/* Insere log na tabelaPosCopLog */
+	x ./mysql -h &ip. -u &usuario. -p&senha. --database="&banco." --execute="INSERT INTO posCopLog (user,description) VALUES('SAS','Migração base DIRAO')";
+
+	/* Executa a procedure de atualização */
+	x ./mysql -h &ip. -u &usuario. -p&senha. --database="&banco." --execute="CALL creditoPosCop.carregarProtocolosNaBaseQuarentena;";
+
+	/* Exclui o arquivo temporário */
+	x rm &dirProjeto./finalDiraoTable.tmp;
+RUN;

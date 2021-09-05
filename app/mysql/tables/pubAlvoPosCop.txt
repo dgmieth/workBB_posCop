@@ -1,0 +1,6 @@
+CREATE TABLE `pubAlvoPosCop` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `txt` varchar(25) DEFAULT NULL,
+  `filtroSetado` int(1) DEFAULT '0',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8

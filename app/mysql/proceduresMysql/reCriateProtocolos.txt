@@ -1,0 +1,165 @@
+CREATE DEFINER=`root`@`%` PROCEDURE `creditoPosCop`.`reCriateProtocolos`()
+BEGIN
+	DECLARE beg INT;
+	DECLARE fin INT;
+	DECLARE idDetServ INT;
+	SET idDetServ = 560;
+/*===================================================================================================================*/
+  	/*gera tabela temporário com protocolos a serem abertos novamente*/	
+	DROP TABLE IF EXISTS creditoPosCop.recriaProtocolos;
+	CREATE TABLE creditoPosCop.recriaProtocolos AS
+	SELECT
+		t.VLDC_REG_ACRD ,
+		t.NR_UNCO_CTR_OPR ,
+		t.NR_UNCO_CTR_VCLD ,
+		t.SG_SIS_RSP_CDU_VCLD ,
+		t.CD_PRF_DEPE_CDU_VCLD ,
+		t.TX_NR_PRC_VCLD,
+		t.NR_PRC,
+		t.TX_EST_PRC, 
+			t.NR_PRC_VCLD, 
+			t.TX_EST_VCLD,
+		t.qtd_adv,
+		t.saldo_devedor,
+		t.mci,
+		t.idProt as t100_demanda_vinculada,
+		t.protocolo ,
+		t.id as idBaseGeralProtocolos ,
+		t.diligEnviada 
+	FROM creditoPosCop.baseGeralProtocolos t
+	WHERE t.reGerar = 1
+	GROUP BY t.mci,t.protocolo  ;
+	/*insere valores novamente na tabela baseGeralProtocolos*/
+	/*     QUANDO t.diligEnviada do registro originário = -1 então novo registro também recerberá -1 pois trata-se de reabertura de registro de ESTOQUE que não deve ter DMI*/
+	/*     Demais registros receberão t.diligEnviada = 0 ou seja, haverá abertura de nova dmi */
+	SET beg = 0;
+	SELECT COUNT(re.SG_SIS_RSP_CDU_VCLD) FROM creditoPosCop.recriaProtocolos re INTO fin;
+	WHILE beg < fin DO
+		INSERT INTO creditoPosCop.baseGeralProtocolos (VLDC_REG_ACRD,NR_UNCO_CTR_OPR,NR_UNCO_CTR_VCLD,SG_SIS_RSP_CDU_VCLD,CD_PRF_DEPE_CDU_VCLD,
+		  												TX_NR_PRC_VCLD, NR_PRC, TX_EST_PRC, NR_PRC_VCLD, TX_EST_VCLD, qtd_adv,mci,nr_unico,saldo_devedor,servico,id_detalhe_serv,detalhe_serv,valor_negocio,valor_rec_perdas, 
+		  												origem_solicitacao,pref_demandante,inf_demandante,t100_demanda_vinculada,tipoProtocoloId,dt_insercao,lg_insercao,idBaseGeralProtocolos, diligEnviada)
+		SELECT  
+			t.VLDC_REG_ACRD ,
+			t.NR_UNCO_CTR_OPR ,
+			t.NR_UNCO_CTR_VCLD ,
+			t.SG_SIS_RSP_CDU_VCLD ,
+			t.CD_PRF_DEPE_CDU_VCLD ,
+			t.TX_NR_PRC_VCLD,
+			t.NR_PRC,
+			t.TX_EST_PRC, 
+			t.NR_PRC_VCLD, 
+			t.TX_EST_VCLD,
+			t.qtd_adv,
+			t.mci ,
+			t.NR_UNCO_CTR_VCLD as nr_unico,
+			t.saldo_devedor,
+			(SELECT ts.NOME FROM demandas_gs.t501_servico ts WHERE ts.id = (SELECT tds.t501_servico_ID FROM demandas_gs.t502_detalhe_servico tds WHERE tds.id = idDetServ)) as servico,
+			idDetServ as id_detalhe_serv ,
+			(SELECT tds.nome FROM demandas_gs.t502_detalhe_servico tds WHERE tds.id = idDetServ) as detaçher_serv,
+			0 as valor_rec_perdas,
+			0 as valor_negocio,
+			'Sumula em Lote' as origem_solicitacao,
+			CASE 
+				WHEN t.CD_PRF_DEPE_CDU_VCLD IN (SELECT ls.prefixos FROM creditoPosCop.listPrefGecorPosCop ls)
+				THEN t.CD_PRF_DEPE_CDU_VCLD
+				ELSE 4935
+			END as pref_demandante,
+			CONCAT('PosCopID-R',
+					YEAR(CURRENT_TIMESTAMP()),CASE
+												WHEN LENGTH(MONTH(CURRENT_TIMESTAMP()))=1
+												THEN CONCAT('0',MONTH(CURRENT_TIMESTAMP()))
+												ELSE MONTH(CURRENT_TIMESTAMP())
+												END ,
+											CASE 
+												WHEN LENGTH(DAY(CURRENT_TIMESTAMP()))=1
+												THEN CONCAT('0',DAY(CURRENT_TIMESTAMP()))
+												ELSE DAY(CURRENT_TIMESTAMP())
+											END,
+											CASE 
+												WHEN LENGTH(HOUR(CURRENT_TIMESTAMP()))=1
+												THEN CONCAT('0',HOUR(CURRENT_TIMESTAMP()))
+												ELSE HOUR(CURRENT_TIMESTAMP())
+											END,'-',
+											CASE 
+												WHEN LENGTH(beg)=1
+												THEN CONCAT('0',beg)
+												ELSE beg
+											END,
+					'\n',CASE
+							WHEN t.VLDC_REG_ACRD = 9
+							THEN 'PROTOCOLO CRIADO A PARTIR DE INFORMAÇÕES DUPLICADAS NA BASE ------ REALIZAR TODA ANÁLISE DE FORMA MANUAL -------'
+							ELSE ''
+						END,
+					'\n\n\n',
+					'Protocolo criado a partir do protocolo anterior: ',t.protocolo,'.',
+					'\n','Nr único atual: ', CASE
+																	WHEN t.NR_UNCO_CTR_VCLD IS NULL
+																	THEN 'não informado'
+																	ELSE t.NR_UNCO_CTR_VCLD
+																END,
+					'\n',' Favor acessar protocolo anterior para pegar as informações do mesmo.',
+					'\n\n\n\n\n\n',
+					'\n','Gerado por creditoPosCop ',CURRENT_TIMESTAMP()
+																) as inf_demandante,
+			t.t100_demanda_vinculada,
+			1 as tipoProtocoloId,
+			CURRENT_TIMESTAMP() as dt_insercao,
+			'SISTEMA' as lg_insercao,
+			t.idBaseGeralProtocolos,
+			CASE
+				WHEN t.VLDC_REG_ACRD = 9
+				THEN -1
+				WHEN t.diligEnviada = -1
+				THEN -1
+				ELSE 0
+			END as diligEnviada 
+		FROM creditoPosCop.recriaProtocolos t
+		LIMIT beg, 1;
+		SET beg = beg +1;
+	END WHILE;
+	/*alterar valor das colunas reGerar para 0 e contadorRegerado para contadorRegerado + 1 na tabela baseGeralProtocolos*/
+	UPDATE creditoPosCop.baseGeralProtocolos t1 INNER JOIN creditoPosCop.recriaProtocolos t2 ON t1.idProt = t2.t100_demanda_vinculada 
+	SET t1.reGerar = 0,
+		t1.contadorRegerado = t1.contadorRegerado + 1
+	WHERE t1.reGerar = 1;
+	IF beg > 0 THEN 
+		INSERT INTO creditoPosCop.posCopLog (`user`,description )
+		VALUES ('SISTEMA', CONCAT(beg,' registros para RECRIAÇÃO de protocolos inseridos na tabela baseGeralProtocolos'));
+	END IF;
+/*===================================================================================================================*/
+  	 /*insere registros da tabela baseGeral Protocolos com o valor da coluna enviadoGeracao = 0 na tabela tmp_sumula_em_Lote para abertura massificada de protocolos*/
+	SELECT COUNT(bgp.id) FROM creditoPosCop.baseGeralProtocolos bgp WHERE bgp.enviado_geracao = 0 INTO beg;
+	IF beg > 0 THEN 
+		INSERT INTO gecor.tmp_sumula_em_lote (mci,NR_UNICO,SALDO_DEVEDOR,SERVICO,ID_DETALHE_SERV,DETALHE_SERV,VALOR_NEGOCIO,VALOR_REC_PERDAS,ORIGEM_SOLICITACAO,
+												PREF_DEMANDANTE,INF_DEMANDANTE,t100_demanda_vinculada)
+		SELECT
+			bgp.mci ,
+			bgp.nr_unico ,
+			bgp.saldo_devedor ,
+			bgp.servico ,
+			bgp.id_detalhe_serv ,
+			bgp.detalhe_serv ,
+			bgp.valor_negocio ,
+			bgp.valor_rec_perdas ,
+			bgp.origem_solicitacao ,
+			bgp.pref_demandante ,
+			bgp.inf_demandante ,
+			bgp.t100_demanda_vinculada 
+		FROM creditoPosCop.baseGeralProtocolos bgp 
+		WHERE bgp.enviado_geracao = 0;
+		SET fin = (SELECT row_count());
+	END IF;
+	/*atualiza o valor da coluna enviado_geracao da tabela baseGeralProtocolso para 1 para os protoclos que foram inseridos na tmp_sumula_em_lote*/
+	/*insere registro na tabela posCopLog com a quantidade de registros que foram inseridos na tabela tmp_sumula_em_lote*/
+	IF fin > 0 THEN
+		UPDATE creditoPosCop.baseGeralProtocolos t1 INNER JOIN gecor.tmp_sumula_em_lote t2 ON t1.mci = t2.mci AND t1.nr_unico = t2.NR_UNICO AND t1.saldo_devedor = t2.SALDO_DEVEDOR 
+																	AND t1.servico = t2.SERVICO AND t1.id_detalhe_serv = t2.ID_DETALHE_SERV AND t1.detalhe_serv = t2.DETALHE_SERV 
+																	AND t1.valor_negocio = t2.VALOR_NEGOCIO AND t1.valor_rec_perdas = t2.VALOR_REC_PERDAS AND t1.origem_solicitacao = t2.ORIGEM_SOLICITACAO 
+																	AND t1.pref_demandante = t2.PREF_DEMANDANTE AND t1.t100_demanda_vinculada = t2.t100_demanda_vinculada 
+		SET t1.enviado_geracao = 1,
+			t1.dt_envio = CURRENT_TIMESTAMP(),
+			t1.lg_envio = 'SISTEMA';
+		INSERT INTO creditoPosCop.posCopLog (`user`,description)
+		VALUES ('SISTEMA', CONCAT(fin,' registros foram inseridos na tabela tmp_sumula_em_lote'));
+	END IF;
+END

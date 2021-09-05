@@ -1,0 +1,4 @@
+node_modules/
+app/excel/fileCreation/
+app/excel/logDeletion.txt
+app/ssl/

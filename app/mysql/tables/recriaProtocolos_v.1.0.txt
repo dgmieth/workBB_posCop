@@ -1,0 +1,16 @@
+CREATE TABLE `recriaProtocolos` (
+  `VLDC_REG_ACRD` int(10) NOT NULL,
+  `NR_UNCO_CTR_OPR` varchar(20) DEFAULT NULL,
+  `NR_UNCO_CTR_VCLD` varchar(20) DEFAULT NULL,
+  `SG_SIS_RSP_CDU_VCLD` varchar(5) DEFAULT NULL,
+  `CD_PRF_DEPE_CDU_VCLD` int(5) DEFAULT NULL,
+  `TX_NR_PRC_VCLD` varchar(50) DEFAULT NULL,
+  `NR_PRC` bigint(20) DEFAULT NULL,
+  `qtd_adv` int(3) DEFAULT NULL,
+  `saldo_devedor` decimal(20,2) DEFAULT NULL,
+  `mci` varchar(9) DEFAULT NULL,
+  `t100_demanda_vinculada` bigint(20) DEFAULT NULL,
+  `protocolo` varchar(20) DEFAULT NULL,
+  `idBaseGeralProtocolos` int(11) NOT NULL DEFAULT '0',
+  `diligEnviada` int(1) DEFAULT '0'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8

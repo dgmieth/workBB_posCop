@@ -1,0 +1,15 @@
+CREATE TABLE `posCopConfLog` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `criadoEm` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `criadoPor` varchar(15) NOT NULL,
+  `pubAlvoPosCop` varchar(40) DEFAULT NULL,
+  `regAcrdValidadoPosCop` varchar(40) DEFAULT NULL COMMENT 'Acordo Registrado Portal',
+  `sisResponsavelPosCop` varchar(40) DEFAULT NULL,
+  `prefGecorPosCop` varchar(40) DEFAULT NULL,
+  `sitVinculoOprPosCop` varchar(200) DEFAULT NULL,
+  `fluxoEstoquePosCop` varchar(40) DEFAULT NULL,
+  `excluido` int(1) DEFAULT '0',
+  `excluidoPor` varchar(15) DEFAULT NULL,
+  `exlcuidoEm` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8

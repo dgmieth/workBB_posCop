@@ -1,0 +1,66 @@
+CREATE DEFINER=`root`@`%` FUNCTION `creditoPosCop`.`createConfigurationString`() RETURNS text CHARSET utf8
+BEGIN
+	DECLARE counter INT;
+	DECLARE cf VARCHAR(500);
+	DECLARE loopCounter INT;
+	
+	SET cf = '';
+/*====================================================================================================================================*/
+/*Busca quais são os filtros setados na tabela regAcrdValidadoPosCop que corresponde ao Acordo registrado portal*/
+	SET counter = 0;
+	SET loopCounter = 0;
+	SELECT count(t.id) FROM creditoPosCop.regAcrdValidadoPosCop t WHERE t.filtroSetado = 1 INTO counter;
+	IF counter > 0 THEN
+		SET cf = CONCAT(cf,'Acordo Registrado Portal: (');
+		WHILE loopCounter < counter DO
+			SET cf = CONCAT(cf,'| ',(SELECT t.txt FROM creditoPosCop.regAcrdValidadoPosCop t WHERE t.filtroSetado = 1 LIMIT loopCounter,1),' |');
+			SET loopCounter = loopCounter +  1;
+		END WHILE;
+		SET cf = CONCAT(cf,') - ');
+	END IF;
+/*====================================================================================================================================*/
+/*Busca quais são os filtros setados na tabela sisResponsavelPosCop que corresponde ao Sistema responsável*/	
+	SET counter = 0;
+	SET loopCounter = 0;
+	SELECT count(t.id) FROM creditoPosCop.sisResponsavelPosCop t WHERE t.filtroSetado = 1 INTO counter;
+	IF counter > 0 THEN
+		SET cf = CONCAT(cf,'Sistema Responsável: (');
+		WHILE loopCounter < counter DO
+			SET cf = CONCAT(cf,'| ',(SELECT t.txt FROM creditoPosCop.sisResponsavelPosCop t WHERE t.filtroSetado = 1 LIMIT loopCounter,1),' |');
+			SET loopCounter = loopCounter +  1;
+		END WHILE;
+		SET cf = CONCAT(cf,') - ');
+	END IF;
+/*====================================================================================================================================*/
+/*Busca quais são os filtros setados na tabela sitVinculoOprPosCop que corresponde à Situação vínculo da operação*/	
+	SET counter = 0;
+	SET loopCounter = 0;
+	SELECT count(t.id) FROM creditoPosCop.sitVinculoOprPosCop t WHERE t.filtroSetado = 1 INTO counter;
+	IF counter > 0 THEN
+		SET cf = CONCAT(cf,' - Situação vínculo da operação: (');
+		WHILE loopCounter < counter DO
+			SET cf = CONCAT(cf,'| ',(SELECT t.txt FROM creditoPosCop.sitVinculoOprPosCop t WHERE t.filtroSetado = 1 LIMIT loopCounter,1),' |');
+			SET loopCounter = loopCounter +  1;
+		END WHILE;
+		SET cf = CONCAT(cf,') - ');
+	END IF;
+/*====================================================================================================================================*/
+/*Busca quais são os filtros setados na tabela sisResponsavelPosCop que corresponde ao Sistema responsável*/
+	SET counter = 0;
+	SELECT count(t.id) FROM creditoPosCop.prefGecorPosCop t WHERE t.txt = 'Sim' INTO counter;
+	IF counter = 1 THEN 
+		SET counter = 0;
+		SET loopCounter = 0;
+		SELECT count(t.id) FROM creditoPosCop.listPrefGecorPosCop t WHERE t.filtroSetado = 1 INTO counter;
+		IF counter > 0 THEN
+			SET cf = CONCAT(cf,' - Prefixos selecionados: (');
+			WHILE loopCounter < counter DO
+				SET cf = CONCAT(cf,'| ',(SELECT t.prefixos FROM creditoPosCop.listPrefGecorPosCop t WHERE t.filtroSetado = 1 LIMIT loopCounter,1),' |');
+				SET loopCounter = loopCounter +  1;
+			END WHILE;
+			SET cf = CONCAT(cf,')');
+		END IF;
+	RETURN cf;
+	END IF;
+	
+END

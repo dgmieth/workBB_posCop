@@ -1,0 +1,553 @@
+CREATE DEFINER=`root`@`%` PROCEDURE `creditoPosCop`.`creatingProtocolos`()
+BEGIN
+	DECLARE pubAlvoSim INT;
+	DECLARE pubAlvoNao INT;
+	DECLARE pubAlvoALVA INT;
+	DECLARE XER INT;
+	DECLARE COP INT;
+	DECLARE soGecor INT;
+	DECLARE operNaoVinc INT;
+	DECLARE vinc INT;
+	DECLARE vincEmOutro INT;
+	DECLARE acrdReg INT;
+	DECLARE acrdNaoReg INT;
+	DECLARE acrdDuplicados INT;
+	DECLARE regAnalisados INT;
+	DECLARE fluxoNumber INT;
+	DECLARE estoqueNumber INT;
+	DECLARE beg INT;
+	DECLARE fin INT;
+	DECLARE whereClause VARCHAR(500);
+	DECLARE idDetServ INT;
+	DECLARE contadorValida INT;
+	DECLARE contadorInicial INT;
+	DECLARE msg VARCHAR(255);
+	SET idDetServ = 560;
+	SET whereClause = '';
+/*===================================================================================================================*/
+	/*Lê filtros setados na tabela pubAlvoPosCop*/
+	/*SET pubAlvoSim = 0;
+	SET pubAlvoNao = 0;
+	SET pubAlvoALVA = 0;
+	SET beg = 1;
+	SELECT COUNT(papc.id) FROM creditoPosCop.pubAlvoPosCop papc INTO fin;
+	WHILE beg<=fin DO
+		IF beg = 1 THEN
+			SELECT papc.filtroSetado FROM creditoPosCop.pubAlvoPosCop papc WHERE papc.txt = 'Sim' INTO pubAlvoSim;
+		END IF;
+		IF beg = 2 THEN
+			SELECT papc.filtroSetado FROM creditoPosCop.pubAlvoPosCop papc WHERE papc.txt = 'Nao' INTO pubAlvoNao;
+		END IF;
+		IF beg = 3 THEN
+			SELECT papc.filtroSetado FROM creditoPosCop.pubAlvoPosCop papc WHERE papc.txt = 'Alva' INTO pubAlvoALVA;
+		END IF;
+		SET beg = beg + 1;
+	END WHILE;
+	IF (pubAlvoSim = 1 AND pubAlvoNao = 0 and pubAlvoALVA = 0) THEN 
+		SET whereClause = CONCAT(whereClause,' AND (qpc.PBCO_ALVO IN(\'Sim\'))');
+	END IF;
+	IF (pubAlvoSim = 1 AND pubAlvoNao = 1 and pubAlvoALVA = 0) THEN 
+		SET whereClause = CONCAT(whereClause, ' AND (qpc.PBCO_ALVO IN(\'Sim\',\'N\'))');
+	END IF;
+	IF (pubAlvoSim = 1 AND pubAlvoNao = 0 and pubAlvoALVA = 1) THEN 
+		SET whereClause = CONCAT(whereClause,' AND (qpc.PBCO_ALVO IN(\'Sim\',\'ALVA\'))');
+	END IF;
+	IF (pubAlvoSim = 1 AND pubAlvoNao = 1 and pubAlvoALVA = 1) THEN 
+		SET whereClause = CONCAT(whereClause,' AND (qpc.PBCO_ALVO IN(\'Sim\',\'N\',\'ALVA\'))');
+	END IF;
+	IF (pubAlvoSim = 0 AND pubAlvoNao = 0 and pubAlvoALVA = 0) THEN 
+		SET whereClause = CONCAT(whereClause,'');
+	END IF;
+	IF (pubAlvoSim = 0 AND pubAlvoNao = 1 and pubAlvoALVA = 0) THEN 
+		SET whereClause = CONCAT(whereClause,' AND (qpc.PBCO_ALVO IN(\'N\'))');
+	END IF;
+	IF (pubAlvoSim = 0 AND pubAlvoNao = 1 and pubAlvoALVA = 1) THEN 
+		SET whereClause = CONCAT(whereClause,' AND (qpc.PBCO_ALVO IN(\'N\',\'ALVA\'))');
+	END IF;
+	IF (pubAlvoSim = 0 AND pubAlvoNao = 0 and pubAlvoALVA = 1) THEN 
+		SET whereClause = CONCAT(whereClause,' AND (qpc.PBCO_ALVO IN(\'ALVA\'))');
+	END IF;*/
+/*===================================================================================================================*/
+	/*Lê filtros setados na tabela sisResponsavelPosCop*/
+	SET XER = 0;
+	SET COP = 0;
+	SET beg = 1;
+	SELECT COUNT(srpc.id) FROM creditoPosCop.sisResponsavelPosCop srpc INTO fin;
+	WHILE beg<=fin DO
+		IF beg = 1 THEN
+			SELECT srpc.filtroSetado FROM creditoPosCop.sisResponsavelPosCop srpc WHERE srpc.txt = 'XER' INTO XER;
+		END IF;
+		IF beg = 2 THEN
+			SELECT srpc.filtroSetado FROM creditoPosCop.sisResponsavelPosCop srpc WHERE srpc.txt = 'COP' INTO COP;
+		END IF;
+		SET beg = beg + 1;
+	END WHILE;
+	IF (XER = 0 AND COP = 0) THEN 
+		SET whereClause = CONCAT(whereClause,'');
+	END IF;
+	IF (XER = 1 AND COP = 0) THEN 
+		SET whereClause = CONCAT(whereClause,' AND (qpc.SG_SIS_RSP_CDU_VCLD IN(\'XER\'))');
+	END IF;
+	IF (XER = 0 AND COP = 1) THEN 
+		SET whereClause = CONCAT(whereClause,' AND (qpc.SG_SIS_RSP_CDU_VCLD IN(\'COP\'))');
+	END IF;
+	IF (XER = 1 AND COP = 1) THEN 
+		SET whereClause = CONCAT(whereClause,' AND (qpc.SG_SIS_RSP_CDU_VCLD IN(\'XER\',\'COP\'))');
+	END IF;
+/*===================================================================================================================*/
+	/*Lê filtros setados na tabela prefGecorPosCop*/
+	/*SET soGecor = 0;
+	SET beg = 1;
+	SELECT COUNT(pgpc.id) FROM creditoPosCop.prefGecorPosCop pgpc INTO fin;
+	WHILE beg<=fin DO
+		IF beg = 1 THEN
+			SELECT pgpc.filtroSetado from creditoPosCop.prefGecorPosCop pgpc WHERE pgpc.txt = 'Sim' INTO soGecor;
+		END IF;
+		SET beg = beg + 1;
+	END WHILE;
+	IF (soGecor = 1) THEN 
+		SET whereClause = CONCAT(whereClause,' AND (qpc.CD_PRF_DEPE_CDU_VCLD IN ((SELECT lpgpc.prefixos FROM creditoPosCop.listPrefGecorPosCop lpgpc)))');
+	END IF;*/
+	SELECT pgpc.filtroSetado from creditoPosCop.prefGecorPosCop pgpc WHERE pgpc.txt = 'Sim' INTO soGecor;
+	IF soGecor = 1 THEN 
+		SET whereClause = CONCAT(whereClause,' AND (qpc.CD_PRF_DEPE_CDU_VCLD IN ((SELECT lpgpc.prefixos FROM creditoPosCop.listPrefGecorPosCop lpgpc WHERE lpgpc.filtroSetado = 1)))');
+	END IF;
+/*===================================================================================================================*/
+	/*Lê filtros setados na tabela sitVinculoOprPosCop*/
+	SET operNaoVinc = 0;
+	SET vinc = 0;
+	SET vincEmOutro = 0;
+	SET beg = 1;
+	SELECT COUNT(svopc.id) FROM creditoPosCop.sitVinculoOprPosCop svopc INTO fin;
+	WHILE beg<=fin DO
+		IF beg = 1 THEN
+			SELECT svopc.filtroSetado FROM creditoPosCop.sitVinculoOprPosCop svopc WHERE svopc.txt = 'Operação não vinculada' INTO operNaoVinc;
+		END IF;
+		IF beg = 2 THEN
+			SELECT svopc.filtroSetado FROM creditoPosCop.sitVinculoOprPosCop svopc WHERE svopc.txt = 'Vinculada' INTO vinc;
+		END IF;
+		IF beg = 3 THEN
+			SELECT svopc.filtroSetado FROM creditoPosCop.sitVinculoOprPosCop svopc WHERE svopc.txt = 'Vinculada em outro NPJ' INTO vincEmOutro;
+		END IF;
+		SET beg = beg + 1;
+	END WHILE;
+	IF(operNaoVinc = 1 AND vinc = 0 AND vincEmOutro = 0) THEN 
+		SET whereClause = CONCAT(whereClause,'AND (qpc.TX_NR_PRC_VCLD IN(\'Operacao nao vinculada\'))');
+	END IF;
+	IF(operNaoVinc = 1 AND vinc = 1 AND vincEmOutro = 0) THEN 
+		SET whereClause = CONCAT(whereClause,'AND (qpc.TX_NR_PRC_VCLD IN(\'Operacao nao vinculada\',\'Vinculada\'))');
+	END IF;
+	IF(operNaoVinc = 1 AND vinc = 0 AND vincEmOutro = 1) THEN 
+		SET whereClause = CONCAT(whereClause,'AND (qpc.TX_NR_PRC_VCLD IN(\'Operacao nao vinculada\',\'Vinculada em outro NPJ\'))');
+	END IF;
+	IF(operNaoVinc = 1 AND vinc = 1 AND vincEmOutro = 1) THEN 
+		SET whereClause = CONCAT(whereClause,'AND (qpc.TX_NR_PRC_VCLD IN(\'Operacao nao vinculada\',\'Vinculada\',\'Vinculada em outro NPJ\'))');
+	END IF;
+	IF(operNaoVinc = 0 AND vinc = 0 AND vincEmOutro = 0) THEN 
+		SET whereClause = CONCAT(whereClause,'');
+	END IF;
+	IF(operNaoVinc = 0 AND vinc = 1 AND vincEmOutro = 0) THEN 
+		SET whereClause = CONCAT(whereClause,'AND (qpc.TX_NR_PRC_VCLD IN(\'Vinculada\'))');
+	END IF;
+	IF(operNaoVinc = 0 AND vinc = 1 AND vincEmOutro = 1) THEN 
+		SET whereClause = CONCAT(whereClause,'AND (qpc.TX_NR_PRC_VCLD IN(\'Vinculada\',\'Vinculada em outro NPJ\'))');
+	END IF;
+	IF(operNaoVinc = 0 AND vinc = 0 AND vincEmOutro = 1) THEN 
+		SET whereClause = CONCAT(whereClause,'AND (qpc.TX_NR_PRC_VCLD IN(\'Vinculada em outro NPJ\'))');
+	END IF;
+/*===================================================================================================================*/
+	/*Lê filtros setados na tabela regAcrdValidadoPosCop*/
+	SET acrdReg = 0;
+	SET acrdNaoReg = 0;
+	SET acrdDuplicados = 0;
+	
+	SELECT ravpc.filtroSetado FROM creditoPosCop.regAcrdValidadoPosCop ravpc WHERE ravpc.txt = 'Sim' INTO acrdReg;
+	SELECT ravpc.filtroSetado FROM creditoPosCop.regAcrdValidadoPosCop ravpc WHERE ravpc.txt = 'Nao' INTO acrdNaoReg;
+	SELECT ravpc.filtroSetado FROM creditoPosCop.regAcrdValidadoPosCop ravpc WHERE ravpc.txt = 'Duplicado' INTO acrdDuplicados;
+	SELECT ravpc.filtroSetado FROM creditoPosCop.regAcrdValidadoPosCop ravpc WHERE ravpc.txt = 'Analisado' INTO regAnalisados;
+
+	IF (acrdReg = 1 AND acrdNaoReg = 0) THEN 
+		SET whereClause = CONCAT(whereClause,' AND (qpc.VLDC_REG_ACRD IN (1))');
+	ELSEIF (acrdReg = 1 AND acrdNaoReg = 1) THEN 
+		SET whereClause = CONCAT(whereClause,' AND (qpc.VLDC_REG_ACRD IN (1,0))');
+	ELSEIF (acrdReg = 0 AND acrdNaoReg = 1) THEN 
+		SET whereClause = CONCAT(whereClause,' AND (qpc.VLDC_REG_ACRD IN (0))');
+	ELSE
+		IF (acrdDuplicados = 1) THEN
+			SET whereClause = CONCAT(whereClause,' AND (qpc.VLDC_REG_ACRD IN (9))');
+		ELSE
+			SET whereClause = CONCAT(whereClause,' AND (qpc.VLDC_REG_ACRD NOT IN (9))');
+		END IF;
+	END IF;
+	IF (regAnalisados=1) THEN
+		SET whereClause = CONCAT(whereClause,' AND (qpc.regAnalisado IN (1))');
+	ELSE 
+		SET whereClause = CONCAT(whereClause,' AND (qpc.regAnalisado IN (0))');
+	END IF;
+/*===================================================================================================================*/
+	/*Lê qtde a ser gerada na tabela fluxoEstoquePosCop*/
+	SET fluxoNumber = 0;
+	SELECT fepc2.qtde FROM creditoPosCop.fluxoEstoquePosCop fepc2 WHERE fepc2.txt ='Fluxo' INTO fluxoNumber;
+	IF fluxoNumber IS NULL THEN SET fluxoNumber = 0;
+	END IF;
+	SET estoqueNumber = 0;
+	SELECT fepc2.qtde FROM creditoPosCop.fluxoEstoquePosCop fepc2 WHERE fepc2.txt ='Estoque' INTO estoqueNumber;
+	IF estoqueNumber IS NULL THEN SET estoqueNumber = 0;
+	END IF;
+
+	INSERT into creditoPosCop.posCopLog (`user`,description)
+	VALUES ('SISTEMA',Concat(whereClause,' ', fluxoNumber, ' ', estoqueNumber));
+	INSERT into creditoPosCop.posCopLog (`user`,description)
+	VALUES ('SISTEMA',Concat('Tradução whereClause acima: ',(SELECT creditoPosCop.createConfigurationString())));
+/*===================================================================================================================*/	
+	/*cria tabela de registrosEstoque*/
+	DROP TABLE IF EXISTS creditoPosCop.registrosEstoque;
+	SET @sqlSt1 = CONCAT('CREATE TABLE creditoPosCop.registrosEstoque AS ',
+						'SELECT qpc.VLDC_REG_ACRD, qpc.NR_UNCO_CTR_OPR, qpc.NR_UNCO_CTR_VCLD, qpc.MCI, ',
+						'qpc.SG_SIS_RSP_CDU_VCLD, qpc.CD_PRF_DEPE_CDU_VCLD, qpc.TX_NR_PRC_VCLD,  ',
+						'qpc.NR_PRC, qpc.TX_EST_PRC , qpc.NR_PRC_VCLD , qpc.TX_EST_VCLD , qpc.QTD_ADV, qpc.regAnalisado ',
+						'FROM creditoPosCop.quarentenaPosCop qpc ',
+                        'WHERE qpc.protCriado = 0 AND CURRENT_TIMESTAMP() > qpc.quarentenaAte ',
+                        'AND qpc.quarentenaAte <= (SELECT fepc.dataInicioEstoque FROM creditoPosCop.fluxoEstoquePosCop fepc WHERE fepc.txt = \'Estoque\') ',
+                        whereClause,
+                        'LIMIT ', estoqueNumber);
+    PREPARE stm1 FROM @sqlSt1;
+   	EXECUTE stm1;
+  	SET beg = 1;
+  	SET contadorInicial = 1;
+  	(SELECT COUNT(ID) FROM creditoPosCop.idFormalizacaoPosCop INTO contadorValida);
+  	ALTER TABLE creditoPosCop.registrosEstoque 
+  	ADD COLUMN t100_demanda_vinc BIGINT(20);
+  	WHILE beg <= estoqueNumber DO
+	  	UPDATE creditoPosCop.registrosEstoque 
+		SET t100_demanda_vinc = (SELECT ID FROM creditoPosCop.idFormalizacaoPosCop LIMIT contadorInicial,1)
+		WHERE t100_demanda_vinc IS NULL
+		LIMIT 1;
+  		SET beg = beg + 1;
+  		SET contadorInicial = contadorInicial + 1;
+  		IF contadorInicial = contadorValida THEN 
+  			SET contadorInicial = 1;
+  		END IF;
+  	END WHILE;
+ /*===================================================================================================================*/
+    /*cria tabela de registrosFluxo*/
+	DROP TABLE IF EXISTS creditoPosCop.registrosFluxo;
+	SET @sqlSt2 = CONCAT('CREATE TABLE creditoPosCop.registrosFluxo AS ',
+						'SELECT qpc.VLDC_REG_ACRD, qpc.NR_UNCO_CTR_OPR, qpc.NR_UNCO_CTR_VCLD, qpc.MCI, ',
+						'qpc.SG_SIS_RSP_CDU_VCLD, qpc.CD_PRF_DEPE_CDU_VCLD, qpc.TX_NR_PRC_VCLD,  ',
+						'qpc.NR_PRC, qpc.TX_EST_PRC , qpc.NR_PRC_VCLD , qpc.TX_EST_VCLD , qpc.QTD_ADV, qpc.regAnalisado ',
+						'FROM creditoPosCop.quarentenaPosCop qpc ',
+                        'WHERE qpc.protCriado = 0 AND CURRENT_TIMESTAMP() > qpc.quarentenaAte ',
+                        'AND qpc.quarentenaAte > (SELECT fepc.dataInicioEstoque FROM creditoPosCop.fluxoEstoquePosCop fepc WHERE fepc.txt = \'Estoque\') ',
+                        whereClause,
+                        'LIMIT ', fluxoNumber);
+    PREPARE stm2 FROM @sqlSt2;
+   	EXECUTE stm2;
+   	SET beg = 1;
+    SET contadorInicial = 1;
+  	(SELECT COUNT(ID) FROM creditoPosCop.idFormalizacaoPosCop INTO contadorValida);
+  	ALTER TABLE creditoPosCop.registrosFluxo 
+  	ADD COLUMN t100_demanda_vinc BIGINT(20);
+  	WHILE beg <= fluxoNumber DO
+	  	UPDATE creditoPosCop.registrosFluxo 
+		SET t100_demanda_vinc = (SELECT ID FROM creditoPosCop.idFormalizacaoPosCop LIMIT contadorInicial,1)
+		WHERE t100_demanda_vinc IS NULL
+		LIMIT 1;
+  		SET beg = beg + 1;
+  		SET contadorInicial = contadorInicial + 1;
+  		IF contadorInicial = contadorValida THEN 
+  			SET contadorInicial = 1;
+  		END IF;
+  	END WHILE;
+/*===================================================================================================================*/
+  	 /*insere protocolos de ESTOQUE na tabela baseGeralProtocolos*/
+  	/*       ela seta uma coluna a mais que o código similar abaixo que acriar protocolos fluxo         */
+  	/*                 para que não seja aberta nenhuma diligência para os de estoque                   */
+  	/*           a coluna diligEnviada é setada em -1, assim a rotina que gera as diligencias           */
+  	/*              vai ignorar esses registros, porque sempre busca registros com valor 0              */
+  	SET beg = 0;
+	SELECT COUNT(re.SG_SIS_RSP_CDU_VCLD) FROM creditoPosCop.registrosEstoque re INTO fin;
+	WHILE beg < fin DO
+		INSERT INTO creditoPosCop.baseGeralProtocolos (VLDC_REG_ACRD,NR_UNCO_CTR_OPR,NR_UNCO_CTR_VCLD,SG_SIS_RSP_CDU_VCLD,CD_PRF_DEPE_CDU_VCLD,
+		  												TX_NR_PRC_VCLD, NR_PRC, TX_EST_PRC, NR_PRC_VCLD, TX_EST_VCLD ,qtd_adv,mci,nr_unico,saldo_devedor,servico,id_detalhe_serv,detalhe_serv,valor_negocio,valor_rec_perdas, 
+		  												origem_solicitacao,pref_demandante,inf_demandante,t100_demanda_vinculada,tipoProtocoloId,dt_insercao,lg_insercao, diligEnviada)
+		SELECT  
+			t.VLDC_REG_ACRD ,
+			t.NR_UNCO_CTR_OPR ,
+			t.NR_UNCO_CTR_VCLD ,
+			t.SG_SIS_RSP_CDU_VCLD ,
+			t.CD_PRF_DEPE_CDU_VCLD ,
+			t.TX_NR_PRC_VCLD,
+			t.NR_PRC,
+			t.TX_EST_PRC, 
+			t.NR_PRC_VCLD, 
+			t.TX_EST_VCLD,
+			t.qtd_adv,
+			t.MCI as mci ,
+			t.NR_UNCO_CTR_VCLD as nr_unico,
+			0 as saldo_devedor,
+			(SELECT ts.NOME FROM demandas_gs.t501_servico ts WHERE ts.id = (SELECT tds.t501_servico_ID FROM demandas_gs.t502_detalhe_servico tds WHERE tds.id = idDetServ)) as servico,
+			idDetServ as id_detalhe_serv ,
+			(SELECT tds.nome FROM demandas_gs.t502_detalhe_servico tds WHERE tds.id = idDetServ) as detaçher_serv,
+			0 as valor_rec_perdas,
+			0 as valor_negocio,
+			'Sumula em Lote' as origem_solicitacao,
+			CASE 
+				WHEN t.CD_PRF_DEPE_CDU_VCLD IN (SELECT ls.prefixos FROM creditoPosCop.listPrefGecorPosCop ls)
+				THEN t.CD_PRF_DEPE_CDU_VCLD
+				ELSE 4935
+			END as pref_demandante,
+			CONCAT('PosCopID-E',
+					YEAR(CURRENT_TIMESTAMP()),CASE
+												WHEN LENGTH(MONTH(CURRENT_TIMESTAMP()))=1
+												THEN CONCAT('0',MONTH(CURRENT_TIMESTAMP()))
+												ELSE MONTH(CURRENT_TIMESTAMP())
+												END ,
+											CASE 
+												WHEN LENGTH(DAY(CURRENT_TIMESTAMP()))=1
+												THEN CONCAT('0',DAY(CURRENT_TIMESTAMP()))
+												ELSE DAY(CURRENT_TIMESTAMP())
+											END,
+											CASE 
+												WHEN LENGTH(HOUR(CURRENT_TIMESTAMP()))=1
+												THEN CONCAT('0',HOUR(CURRENT_TIMESTAMP()))
+												ELSE HOUR(CURRENT_TIMESTAMP())
+											END,'-',
+											CASE 
+												WHEN LENGTH(beg)=1
+												THEN CONCAT('0',beg)
+												ELSE beg
+											END,
+					'\n\n\n',
+					'\n',CASE
+							WHEN t.VLDC_REG_ACRD = 9
+							THEN 'PROTOCOLO CRIADO A PARTIR DE INFORMAÇÕES DUPLICADAS NA BASE ------ REALIZAR TODA ANÁLISE DE FORMA MANUAL -------'
+							ELSE ''
+						END,
+					'\n',CASE
+							WHEN t.regAnalisado = 1
+							THEN 'PROTOCOLO CRIADO A PARTIR DE UM REGISTRO JÁ ANALISADO ANTERIORMENTE ---------------------------------------------'
+							ELSE ''
+						END,
+					'\n','Nr único anterior: ', CASE
+																	WHEN t.NR_UNCO_CTR_OPR IS NULL
+																	THEN 'não informado'
+																	ELSE t.NR_UNCO_CTR_OPR
+																END,
+					'\n','Nr único atual: ', CASE
+																	WHEN t.NR_UNCO_CTR_VCLD IS NULL
+																	THEN 'não informado'
+																	ELSE t.NR_UNCO_CTR_VCLD
+																END,
+					'\n','NPJ anterior: ', CASE
+																	WHEN t.NR_PRC IS NULL
+																	THEN 'não informado'
+																	ELSE t.NR_PRC
+																END,
+					'\n','Status NPJ anterior: ', CASE
+																	WHEN t.TX_EST_PRC IS NULL
+																	THEN 'não informado'
+																	ELSE t.TX_EST_PRC
+																END,
+					'\n','NPJ vinculado: ', CASE
+																	WHEN t.NR_PRC_VCLD IS NULL
+																	THEN 'não informado'
+																	ELSE t.NR_PRC_VCLD
+																END,
+					'\n','Status NPJ vinculado: ', CASE
+																	WHEN t.TX_EST_VCLD IS NULL
+																	THEN 'não informado'
+																	ELSE t.TX_EST_VCLD
+																END,
+					'\n\n\n\n\n\n',
+					'-------------------------------------------------------------------------------------------',
+					'-------------------------------------------------------------------------------------------',					
+					'-------------------------------------------------------------------------------------------',				
+					(SELECT creditoPosCop.createConfigurationString()),
+					'-------------------------------------------------------------------------------------------',
+					'-------------------------------------------------------------------------------------------',	
+					'\n','Gerado por creditoPosCop ',CURRENT_TIMESTAMP()
+																) as inf_demandante,
+			t.t100_demanda_vinc as t100_demanda_vinculada,
+			1 as tipoProtocoloId,
+			CURRENT_TIMESTAMP() as dt_insercao,
+			'SISTEMA' as lg_insercao,
+			-1 as diligEnviada
+		FROM creditoPosCop.registrosEstoque t
+		LIMIT beg, 1;
+		SET beg = beg +1;
+	END WHILE;
+	SET estoqueNumber = beg;
+	/*insere protocolos de FLUXO na tabela baseGeralProtocolos*/
+	SET beg = 0;		
+	SELECT COUNT(rf.SG_SIS_RSP_CDU_VCLD) FROM creditoPosCop.registrosFluxo rf INTO fin;
+	WHILE beg < fin DO
+		INSERT INTO creditoPosCop.baseGeralProtocolos (VLDC_REG_ACRD,NR_UNCO_CTR_OPR,NR_UNCO_CTR_VCLD,SG_SIS_RSP_CDU_VCLD,CD_PRF_DEPE_CDU_VCLD,
+		  												TX_NR_PRC_VCLD, NR_PRC, TX_EST_PRC, NR_PRC_VCLD, TX_EST_VCLD ,qtd_adv,mci,nr_unico,saldo_devedor,servico,id_detalhe_serv,detalhe_serv,valor_negocio,valor_rec_perdas, 
+		  												origem_solicitacao,pref_demandante,inf_demandante,t100_demanda_vinculada,tipoProtocoloId,dt_insercao,lg_insercao, diligEnviada)
+		SELECT  
+			t.VLDC_REG_ACRD ,
+			t.NR_UNCO_CTR_OPR ,
+			t.NR_UNCO_CTR_VCLD ,
+			t.SG_SIS_RSP_CDU_VCLD ,
+			t.CD_PRF_DEPE_CDU_VCLD ,
+			t.TX_NR_PRC_VCLD,
+			t.NR_PRC,
+			t.TX_EST_PRC, 
+			t.NR_PRC_VCLD, 
+			t.TX_EST_VCLD,
+			t.qtd_adv,
+			t.MCI as mci ,
+			t.NR_UNCO_CTR_VCLD as nr_unico,
+			0 as saldo_devedor,
+			(SELECT ts.NOME FROM demandas_gs.t501_servico ts WHERE ts.id = (SELECT tds.t501_servico_ID FROM demandas_gs.t502_detalhe_servico tds WHERE tds.id = idDetServ)) as servico,
+			idDetServ as id_detalhe_serv ,
+			(SELECT tds.nome FROM demandas_gs.t502_detalhe_servico tds WHERE tds.id = idDetServ) as detaçher_serv,
+			0 as valor_rec_perdas,
+			0 as valor_negocio,
+			'Sumula em Lote' as origem_solicitacao,
+			CASE 
+				WHEN t.CD_PRF_DEPE_CDU_VCLD IN (SELECT ls.prefixos FROM creditoPosCop.listPrefGecorPosCop ls)
+				THEN t.CD_PRF_DEPE_CDU_VCLD
+				ELSE 4935
+			END as pref_demandante,
+			CONCAT('PosCopID-F',
+					YEAR(CURRENT_TIMESTAMP()),CASE
+												WHEN LENGTH(MONTH(CURRENT_TIMESTAMP()))=1
+												THEN CONCAT('0',MONTH(CURRENT_TIMESTAMP()))
+												ELSE MONTH(CURRENT_TIMESTAMP())
+												END ,
+											CASE 
+												WHEN LENGTH(DAY(CURRENT_TIMESTAMP()))=1
+												THEN CONCAT('0',DAY(CURRENT_TIMESTAMP()))
+												ELSE DAY(CURRENT_TIMESTAMP())
+											END,
+											CASE 
+												WHEN LENGTH(HOUR(CURRENT_TIMESTAMP()))=1
+												THEN CONCAT('0',HOUR(CURRENT_TIMESTAMP()))
+												ELSE HOUR(CURRENT_TIMESTAMP())
+											END,'-',
+											CASE 
+												WHEN LENGTH(beg)=1
+												THEN CONCAT('0',beg)
+												ELSE beg
+											END,
+					'\n\n\n',
+					'\n',CASE
+							WHEN t.VLDC_REG_ACRD = 9
+							THEN 'PROTOCOLO CRIADO A PARTIR DE INFORMAÇÕES DUPLICADAS NA BASE ------ REALIZAR TODO ANÁLISE DE FORMA MANUAL -------'
+							ELSE ''
+						END,
+					'\n',CASE
+							WHEN t.regAnalisado = 1
+							THEN 'PROTOCOLO CRIADO A PARTIR DE UM REGISTRO JÁ ANALISADO ANTERIORMENTE ---------------------------------------------'
+							ELSE ''
+						END,
+					'\n','Nr único anterior: ', CASE
+																	WHEN t.NR_UNCO_CTR_OPR IS NULL
+																	THEN 'não informado'
+																	ELSE t.NR_UNCO_CTR_OPR
+																END,
+					'\n','Nr único atual: ', CASE
+																	WHEN t.NR_UNCO_CTR_VCLD IS NULL
+																	THEN 'não informado'
+																	ELSE t.NR_UNCO_CTR_VCLD
+																END,
+					'\n','NPJ anterior: ', CASE
+																	WHEN t.NR_PRC IS NULL
+																	THEN 'não informado'
+																	ELSE t.NR_PRC
+																END,
+					'\n','Status NPJ anterior: ', CASE
+																	WHEN t.TX_EST_PRC IS NULL
+																	THEN 'não informado'
+																	ELSE t.TX_EST_PRC
+																END,
+					'\n','NPJ vinculado: ', CASE
+																	WHEN t.NR_PRC_VCLD IS NULL
+																	THEN 'não informado'
+																	ELSE t.NR_PRC_VCLD
+																END,
+					'\n','Status NPJ vinculado: ', CASE
+																	WHEN t.TX_EST_VCLD IS NULL
+																	THEN 'não informado'
+																	ELSE t.TX_EST_VCLD
+																END,
+					'\n\n\n\n\n\n',
+					'-------------------------------------------------------------------------------------------',
+					'-------------------------------------------------------------------------------------------',					
+					'-------------------------------------------------------------------------------------------',				
+					(SELECT creditoPosCop.createConfigurationString()),
+					'-------------------------------------------------------------------------------------------',
+					'-------------------------------------------------------------------------------------------',	
+					'\nGerado por creditoPosCop ',CURRENT_TIMESTAMP()
+																) as inf_demandante,
+			t.t100_demanda_vinc as t100_demanda_vinculada,
+			1 as tipoProtocoloId,
+			CURRENT_TIMESTAMP() as dt_insercao,
+			'SISTEMA' as lg_insercao,
+			CASE
+				WHEN t.VLDC_REG_ACRD = 9
+				THEN -1
+				ELSE 0
+			END AS diligEnviada
+		FROM creditoPosCop.registrosFluxo t
+		LIMIT beg, 1;
+		SET beg = beg +1;
+	END WHILE;
+	set fluxoNumber = beg;
+	/*altera valor da coluna protCriado da tabela quarentenaPosCop para 1 para os protocolos que foram inseridos na baseGeralProtocolos*/
+	IF estoqueNumber > 0 OR fluxoNumber > 0 THEN 
+	
+		UPDATE creditoPosCop.quarentenaPosCop t1 INNER JOIN creditoPosCop.baseGeralProtocolos t2 ON t1.VLDC_REG_ACRD = t2.VLDC_REG_ACRD AND t1.NR_UNCO_CTR_OPR = t2.NR_UNCO_CTR_OPR 
+																	AND t1.NR_UNCO_CTR_VCLD = t2.NR_UNCO_CTR_VCLD AND t1.SG_SIS_RSP_CDU_VCLD = t2.SG_SIS_RSP_CDU_VCLD 
+																	AND t1.CD_PRF_DEPE_CDU_VCLD = t2.CD_PRF_DEPE_CDU_VCLD AND t1.TX_NR_PRC_VCLD = t2.TX_NR_PRC_VCLD 
+																	AND t1.NR_PRC = t2.NR_PRC AND t1.QTD_ADV = t2.qtd_adv 
+		SET t1.protCriado = 1;
+	END IF;
+	/*se se houve protocolos que foram inseridos na baseGeralProtocolos, grava log na tabela posCopLog*/
+	IF estoqueNumber > 0 THEN 
+		INSERT INTO creditoPosCop.posCopLog (`user`,description)
+		VALUES ('SISTEMA', CONCAT(estoqueNumber,' protocolos de ESTOQUE inseridos na tabela baseGeralProtocolos'));
+	END IF;
+	IF fluxoNumber > 0 THEN 
+		INSERT INTO creditoPosCop.posCopLog (`user`,description )
+		VALUES ('SISTEMA', CONCAT(fluxoNumber,' protocolos de FLUXO inseridos na tabela baseGeralProtocolos'));
+	END IF;
+/*===================================================================================================================*/
+  	 /*insere registros da tabela baseGeral Protocolos com o valor da coluna enviadoGeracao = 0 na tabela tmp_sumula_em_Lote para abertura massificada de protocolos*/
+	SELECT COUNT(bgp.id) FROM creditoPosCop.baseGeralProtocolos bgp WHERE bgp.enviado_geracao = 0 INTO contadorInicial;
+	IF contadorInicial > 0 THEN 
+		INSERT INTO gecor.tmp_sumula_em_lote (mci,NR_UNICO,SALDO_DEVEDOR,SERVICO,ID_DETALHE_SERV,DETALHE_SERV,VALOR_NEGOCIO,VALOR_REC_PERDAS,ORIGEM_SOLICITACAO,
+												PREF_DEMANDANTE,INF_DEMANDANTE,t100_demanda_vinculada)
+		SELECT
+			bgp.mci ,
+			bgp.nr_unico ,
+			bgp.saldo_devedor ,
+			bgp.servico ,
+			bgp.id_detalhe_serv ,
+			bgp.detalhe_serv ,
+			bgp.valor_negocio ,
+			bgp.valor_rec_perdas ,
+			bgp.origem_solicitacao ,
+			bgp.pref_demandante ,
+			bgp.inf_demandante ,
+			bgp.t100_demanda_vinculada 
+		FROM creditoPosCop.baseGeralProtocolos bgp 
+		WHERE bgp.enviado_geracao = 0;
+		
+	END IF;
+	/*atualiza o valor da coluna enviado_geracao da tabela baseGeralProtocolso para 1 para os protoclos que foram inseridos na tmp_sumula_em_lote*/
+	/*insere registro na tabela posCopLog com a quantidade de registros que foram inseridos na tabela tmp_sumula_em_lote*/
+	IF contadorInicial > 0 THEN
+		UPDATE creditoPosCop.baseGeralProtocolos t1 INNER JOIN gecor.tmp_sumula_em_lote t2 ON t1.mci = t2.mci AND t1.nr_unico = t2.NR_UNICO AND t1.saldo_devedor = t2.SALDO_DEVEDOR 
+																	AND t1.servico = t2.SERVICO AND t1.id_detalhe_serv = t2.ID_DETALHE_SERV AND t1.detalhe_serv = t2.DETALHE_SERV 
+																	AND t1.valor_negocio = t2.VALOR_NEGOCIO AND t1.valor_rec_perdas = t2.VALOR_REC_PERDAS AND t1.origem_solicitacao = t2.ORIGEM_SOLICITACAO 
+																	AND t1.pref_demandante = t2.PREF_DEMANDANTE AND t1.t100_demanda_vinculada = t2.t100_demanda_vinculada 
+		SET t1.enviado_geracao = 1,
+			t1.dt_envio = CURRENT_TIMESTAMP(),
+			t1.lg_envio = 'SISTEMA';
+		INSERT INTO creditoPosCop.posCopLog (`user`,description)
+		VALUES ('SISTEMA', CONCAT(contadorInicial,' registros foram inseridos na tabela tmp_sumula_em_lote'));
+	END IF;
+END

@@ -1,0 +1,7 @@
+CREATE TABLE `fluxoEstoquePosCop` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `txt` varchar(25) DEFAULT NULL,
+  `qtde` int(11) DEFAULT '0',
+  `dataInicioEstoque` datetime DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8

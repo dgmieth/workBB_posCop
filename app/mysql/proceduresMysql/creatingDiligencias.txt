@@ -1,0 +1,147 @@
+CREATE DEFINER=`root`@`%` PROCEDURE `creditoPosCop`.`creatingDiligencias`()
+BEGIN
+	DECLARE validador INT;
+	DECLARE currentNow TIMESTAMP;
+	DECLARE respInsercao VARCHAR(10);
+	DECLARE rowCounter INT;
+	
+	SET rowCounter = 0;
+	SET validador = 0;
+	SET currentNow = CURRENT_TIMESTAMP(); 
+	SEt respInsercao = 'credPosCop';
+	
+/*===================================================================================================================*/
+  	/*busca quais registros precisam de DMI e os coloca na base dmiPosCop*/
+	INSERT INTO creditoPosCop.dmiPosCop (protocolo,NPJ,valor_negociado,agencia,conta,idS_ferramenta)
+	SELECT DISTINCT
+		bgp.protocolo as protocolo,
+		bgp.NR_PRC as npj,
+		bgp.saldo_devedor as valor_negociado,
+		'n Inf' as agencia,
+		'n Inf' as conta,
+		2 as idS_ferramenta 
+	FROM creditoPosCop.baseGeralProtocolos bgp 
+	WHERE bgp.idProt IS NOT NULL AND bgp.qtd_adv > 1 AND bgp.dmi IS NULL AND bgp.diligEnviada = 0
+		AND bgp.etapa NOT IN (10,97,98,99) ;
+	/*envia diligencias de NPJ condução única - não precisa de DMI de rateio para os registros cuja*/
+	/*coluna qtd_adv <= 1 e diligEnviada = 0*/
+	INSERT INTO gecor.tmp_atualizar_protocolo (SEQUENCIAL,PROTOCOLO,ID_T901,ID_DILIGENCIA,OBSERVACAO,RESPONSAVEL,
+													CONCLUIR,REGISTRAR_DILIG,INFORMATIVO,PREF_DILIGENCIA,BAIXAR_DILIG) 
+		SELECT
+			(SELECT creditoPosCop.getSequencial(bgp.protocolo)) as SEQUENCIAL ,
+			bgp.protocolo AS PROTOCOLO ,
+			0 AS ID_T901 ,
+			29271 AS ID_DILIGENCIA ,
+			Concat('NPJ condução única - não precisa DMI Rateio - Nr Unico: ', bgp.nr_unico) AS OBSERVACAO ,
+			bgp.matr_resp as RESPONSAVEL ,
+			0 as CONCLUIR,
+			1 AS REGISTRAR_DILIGENCIA ,
+			1 AS INFORMATIVO,
+			4935 AS PREF_DILIGENCIA,
+			0 as BAIXA_DILIG
+		FROM creditoPosCop.baseGeralProtocolos bgp
+		WHERE bgp.diligEnviada = 0 AND bgp.qtd_adv <= 1 AND bgp.matr_resp IS NOT NULL;
+	SET validador = (SELECT ROW_COUNT());
+	IF validador > 0 THEN
+		UPDATE creditoPosCop.baseGeralProtocolos bgp
+		SET bgp.diligEnviada =1
+		WHERE bgp.diligEnviada = 0 AND bgp.qtd_adv <= 1 AND bgp.matr_resp IS NOT NULL;
+	END IF;
+/*===================================================================================================================*/
+  	/*insere registros sem DMI na base sumulaEmLote.s_sumula_DMI*/
+	INSERT INTO sumulaEmLote.s_sumula_DMI (protocolo,NPJ,agencia,conta,valor_negociado,data_insercao, resp_insercao ,idS_ferramenta)
+	SELECT 
+		t.protocolo ,
+		t.NPJ ,
+		t.agencia ,
+		t.conta ,
+		t.valor_negociado ,
+		currentNow as data_insercao ,
+		respInsercao as resp_insercao ,
+		t.idS_ferramenta
+	FROM creditoPosCop.dmiPosCop t
+	WHERE t.data_insercao IS NULL and t.resp_insercao IS NULL;
+	/*atualiza resp_insercao and dt_insercao na tabela dmiPosCop*/
+	UPDATE creditoPosCop.dmiPosCop 
+	SET data_insercao = currentNow,
+		resp_insercao = respInsercao
+	WHERE data_insercao IS NULL;
+	/*atualiza dilig_enviada na tabela baseGeralProtocolos*/
+	UPDATE creditoPosCop.baseGeralProtocolos t1 INNER JOIN creditoPosCop.dmiPosCop t2 ON t1.protocolo = t2.protocolo 
+	SET t1.dmi = 'enviada'
+	WHERE t2.data_insercao IS NOT NULL AND t2.dmi IS NULL
+		AND t1.diligEnviada = 0;
+/*===================================================================================================================*/
+  	/*insere nro da DMI na dmiPosCop*/
+	UPDATE creditoPosCop.dmiPosCop t1 INNER JOIN sumulaEmLote.s_sumula_DMI t2 ON t1.protocolo = t2.protocolo AND t1.NPJ = t2.NPJ 
+	SET t1.dmi = t2.dmi,
+		t1.data_registro_PAJ = t2.data_registro_PAJ ,
+		t1.resp_registro_PAJ = t2.resp_registro_PAJ ,
+		t1.registrado = t2.registrado ,
+		t1.data_despacho = t2.data_despacho ,
+		t1.resp_despacho = t2.resp_despacho ,
+		t1.despachado = t2.despachado 
+	WHERE t2.idS_ferramenta = 2 AND t1.despachado = 0 AND t1.registrado = 0 AND t1.dmi IS NULL;
+	/*insere nro da DMI na baseGeralProtocolos*/
+	UPDATE creditoPosCop.baseGeralProtocolos t1 INNER JOIN creditoPosCop.dmiPosCop t2 ON t1.protocolo = t2.protocolo AND t1.NR_PRC = t2.NPJ 
+	SET t1.dmi = t2.dmi 
+	WHERE t2.despachado = 1 and t2.registrado  = 1 AND t2.dmi IS NOT NULL
+		AND t1.diligEnviada = 0 AND t1.dmi = 'enviada';
+/*===================================================================================================================*/
+  /*insere registros da tabela baseGeralDiligencias se qtde_adv > 1*/
+	INSERT INTO creditoPosCop.baseGeralDiligencias (PROTOCOLO,OBSERVACAO,RESPONSAVEL,PREF_DILIGENCIA)
+	SELECT DISTINCT
+		bgp.protocolo,
+		CONCAT('DMI nro: ', bgp.dmi,' despachada. Referência Nr. Único: ',bgp.nr_unico, 
+				'\n\n\n\n\n\n',
+				'\nGerado por creditoPosCop ',CURRENT_TIMESTAMP()
+				) as observacao,
+		bgp.matr_resp as resposnavel,
+		4935 as PREF_DILIGENCIA
+	FROM creditoPosCop.baseGeralProtocolos bgp 
+	WHERE bgp.idProt IS NOT NULL AND bgp.matr_resp IS NOT NULL AND (bgp.dmi IS NOT NULL AND bgp.dmi <> 'enviada') AND bgp.etapa NOT IN (10,97,98,99)
+		AND bgp.diligEnviada = 0 AND bgp.qtd_adv > 1 ;
+	SET validador = (SELECT ROW_COUNT());
+/*===================================================================================================================*/
+	IF validador > 0 THEN 
+		/*atualizando campo sequencial*/
+		UPDATE creditoPosCop.baseGeralDiligencias 
+		SET SEQUENCIAL = (SELECT getSequencial(PROTOCOLO));
+	/*insere Registros na tabela tmp_atualizar_protocolo*/
+		INSERT INTO gecor.tmp_atualizar_protocolo (SEQUENCIAL,PROTOCOLO,ID_T901,ID_DILIGENCIA,OBSERVACAO,RESPONSAVEL,
+													CONCLUIR,REGISTRAR_DILIG,INFORMATIVO,PREF_DILIGENCIA,BAIXAR_DILIG) 
+		SELECT
+			bgd.SEQUENCIAL,
+			bgd.PROTOCOLO ,
+			bgd.ID_T901 ,
+			bgd.ID_DILIGENCIA ,
+			bgd.OBSERVACAO ,
+			bgd.RESPONSAVEL ,
+			bgd.CONCLUIR ,
+			bgd.REGISTRAR_DILIG ,
+			bgd.INFORMATIVO ,
+			bgd.PREF_DILIGENCIA ,
+			bgd.BAIXAR_DILIG
+		FROM creditoPosCop.baseGeralDiligencias bgd 
+		WHERE bgd.enviada = 0;
+		SET validador = (SELECT ROW_COUNT());
+	END IF;
+/*===================================================================================================================*/
+	/*confere se houve inserção na tabela tmp_atualizar_protocolo*/
+	IF validador > 0 THEN 
+		/*insere log da qtde de diligências enviadas na tabela posCopLog*/
+		INSERT INTO creditoPosCop.posCopLog (`user`,description)
+		VALUES ('SISTEMA', CONCAT(validador,' registros de diligência inseridos na tabela tmp_atualiza_protocolo'));
+		/*atualiza coluna enviada para 1 na baseGeralDiligencias*/
+		UPDATE creditoPosCop.baseGeralDiligencias t1
+		SET t1.enviada = 1
+		WHERE t1.enviada = 0;
+		/*atualiza coluna enviada para 1 na baseGeralDiligencias*/
+		UPDATE creditoPosCop.baseGeralProtocolos t1 INNER JOIN creditoPosCop.baseGeralDiligencias t3 ON t3.PROTOCOLO = t1.protocolo 
+		SET t1.diligEnviada = 1
+		WHERE t1.diligEnviada = 0 AND t3.enviada = 1;
+		/*insere log do update das tabelas baseGeralProtocolos e baseGeralDiligencias na tabela posCopLog*/
+		INSERT INTO creditoPosCop.posCopLog (`user`,description)
+		VALUES ('SISTEMA', CONCAT(rowCounter,' registros atualizados na baseGeralProtocolo e baseGeralDiligencias'));
+	END IF;
+END

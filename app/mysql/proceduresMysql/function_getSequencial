@@ -1,0 +1,28 @@
+CREATE DEFINER=`root`@`%` PROCEDURE `creditoPosCop`.`getProtocoloInfo`()
+BEGIN
+	DECLARE contador INT;
+	SET contador = 0;
+/*================================================================================================================*/
+	/*atualiza informações dos protocolos até a etapa deles estar em 10,97,98,99*/
+	UPDATE creditoPosCop.baseGeralProtocolos bgp
+	JOIN demandas_gs.t100_demanda td ON td.JUSTIFICATIVA LIKE CONCAT('%',bgp.inf_demandante,'%')
+	SET 
+		bgp.idProt = td.ID,
+		bgp.protocolo = td.PROTOCOLO ,
+		bgp.dt_atua_prot = CURRENT_TIMESTAMP(),
+		bgp.lg_atua_prot = 'SISTEMA'
+	WHERE td.t502_detalhe_servico_ID = 560 AND td.DT_INICIO >= '2020-11-20 00:00:00'
+		AND bgp.protocolo IS NULL;
+	SET CONTADOR = CONTADOR + (SELECT ROW_COUNT());
+	UPDATE demandas_gs.t100_demanda t1 INNER JOIN creditoPosCop.baseGeralProtocolos t2 ON t1.ID = t2.idProt 
+	SET 
+		t2.etapa = t1.ETAPA ,
+		t2.dt_inicio = t1.DT_INICIO ,
+		t2.matr_resp = t1.MATR_RESP 
+	WHERE t2.etapa NOT IN (10,97,98,99) OR t2.etapa IS NULL;
+	SET CONTADOR = CONTADOR + (SELECT ROW_COUNT());
+	IF contador > 0 THEN
+		INSERT INTO creditoPosCop.posCopLog (`user`,description)
+		VALUES('SISTEMA','Atualização da baseGeralProtocolos');
+	END IF;
+END

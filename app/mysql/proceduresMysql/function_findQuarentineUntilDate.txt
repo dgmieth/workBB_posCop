@@ -1,0 +1,26 @@
+fucnCREATE DEFINER=`root`@`%` FUNCTION `creditoPosCop`.`findQuarentineUntilDate`(inseridaEm TIMESTAMP) RETURNS datetime
+    DETERMINISTIC
+BEGIN
+	DECLARE loopCheck INT;
+	DECLARE loopCounter INT;
+	DECLARE quarentineDay DATE;
+	DECLARE qtdeDiasAdicionarComoQuarentena INT;
+	
+	SET qtdeDiasAdicionarComoQuarentena = 2;
+	SET loopCheck = 0;
+	SET loopCounter = 1;
+	SET quarentineDay = DATE_FORMAT(inseridaEm,'%y-%m-%d');
+
+	WHILE loopCheck = 0 DO
+		SET quarentineDay = DATE_ADD(quarentineDay, INTERVAL 1 DAY);
+		IF WEEKDAY(quarentineDay) IN (6) THEN SET quarentineDay = DATE_ADD(quarentineDay, INTERVAL 1 DAY);
+		END IF;
+		IF WEEKDAY(quarentineDay) IN (0,7) THEN SET quarentineDay = DATE_ADD(quarentineDay, INTERVAL 1 DAY);
+		END IF;
+		IF loopCounter = qtdeDiasAdicionarComoQuarentena THEN SET loopCheck = 1;
+		END IF;
+		SET loopCounter = loopCounter + 1;
+	END WHILE;
+
+	RETURN CONCAT(quarentineDay,' ', TIME_FORMAT(inseridaEm,'%H:%i:%s'));
+END

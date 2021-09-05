@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configuração Pós Cop</title>
+    <link rel="stylesheet" href="/css/bootstrap/bootstrap.css">
+    <link rel="stylesheet" media="screen" href="/css/header.css">
+    <link rel="stylesheet" href="/css/footer.css">
+    <link rel="stylesheet" href="/css/mainPage.css">
+    <link rel="icon" type="image/ico" href="/img/bbFavicon.ico">
+</head>
+<body>
+    
+        <header>{{> header}}</header>
+<!-- ================================================================================================= -->
+        <div id="mp-content-wrapper" class=".container-fluid">
+        <!--Main PAGE - INICIO - OTHER COMPONENTS - ALERTS -->
+        <div class="container" style="padding-top: 5px;">
+            <div class="row">
+                <div class="col">
+                    <div id="successAlert" class="alert alert-success collapse" role="alert">
+                        <strong>Configuração Salva!</strong>
+                        <button id="successAlertCloseBtn" type="button" class="close" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="container">
+            <div class="row">
+                <div class="col">
+                    <div id="dangerAlert" class="alert alert-danger collapse" role="alert">
+                        <strong>Nenhuma configuração criada!</strong> Favor escolher os filtros e informar quantidade de registros para Fluxo e para Estoque ou clique em <i>Voltar configuração atual</i> para carregar a última configuração
+                        <button id="dangerAlertCloseBtn" type="button" class="close" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!--Main PAGE - FIM - OTHER COMPONENTS - ALERTS -->
+        <!-- ================================================================================================= -->
+        <!--Main PAGE - INICIO - OTHER COMPONENTS - MODAL -->
+        <!-- Button trigger modal -->
+        <div class="modal fade" id="openingPageModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="openingPageModal-title" style="color: black;">Modal title</h5>
+            </div>
+            <div class="modal-body">
+                <p id="openingPageModal-p1"> </p>
+                <p id="openingPageModal-p2"> </p>
+                <p id="openingPageModal-p3"> </p>
+                <p id="openingPageModal-p4" style="color: rgb(232,88,80);"> </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            </div>
+            </div>
+        </div>
+        </div>
+        <!--Main PAGE - FIM - OTHER COMPONENTS - MODAL -->
+        <!-- ================================================================================================= -->
+        <!--Main Page - INICIO - FILTROS -->
+            <div id="mp-filtros-content-wrapper" class=".container-fluid;">
+                <h3 style="color: black; padding-left: .5rem; padding-top: 2px; font-weight: 600; letter-spacing: 1px; margin-bottom: 0; border-bottom:0;">Filtros:</h3>
+            <!--Main Page - Primeiro Filtro - Público alvos -->
+                <div id="firstFilter-content-wrapper" class=".container-fluid filters collapse" style="">
+                    <div class="row align-items-center filter-title" style="margin-left:15px; margin-right:15px">
+                        <div id="ff-title-content-wrapper" class="col-xl-3 col-md-4 col-12 .align-content-center">
+                            <div class="align-self-stretch ">
+                                <div class="p-2 text-left"  >
+                                    <p class="h4" >Público Alvo:</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="ff-options-content-wrapper" class="col-xl-9 col-md-8 col-12 filter-options">
+                            <div class="d-flex flex-column">
+                                <div  id="ff-option1-content-wrapper" class="p-2 bd-highlight" style="width: auto;"> 
+                                    <div class="d-flex flex-row">
+                                    <div class="p-2">
+                                        <input id="ff-option1-checkbox" type="checkbox" class="form-control form-control-ff-cbox filter-checkbox" aria-label="Sizing example input" aria-describedby="inputGroup-sizing-sm;">
+                                    </div>
+                                    <div class="p-2"></div>
+                                        <p>Sim</p>
+                                    </div>
+                                </div>
+                                <div id="ff-option2-content-wrapper" class="p-2 bd-highlight" style="width: auto;"> 
+                                    <div class="d-flex flex-row">
+                                    <div class="p-2">
+                                        <input id="ff-option2-checkbox" type="checkbox" class="form-control form-control-ff-cbox filter-checkbox" aria-label="Sizing example input" aria-describedby="inputGroup-sizing-sm;">
+                                    </div>
+                                    <div class="p-2"></div>
+                                        <p>Não</p>
+                                    </div>
+                                </div>                          
+                                <div id="ff-option3-content-wrapper" class="p-2 bd-highlight" style="width: auto;"> 
+                                    <div class="d-flex flex-row">
+                                    <div class="p-2">
+                                        <input id="ff-option3-checkbox" type="checkbox" class="form-control form-control-ff-cbox filter-checkbox" aria-label="Sizing example input" aria-describedby="inputGroup-sizing-sm;" >
+                                    </div>
+                                    <div class="p-2"></div>
+                                        <p>ALVA</p>
+                                    </div>
+                                </div>
+                            </div>  
+                        </div>
+                    </div>
+                </div>
+            <!--Main Page - FIM - PRIMEIRO FILTRO -->
+            <!-- ================================================================================================= -->
+            <!--Main Page - INICIO - SEGUNDO FILTRO -->
+                <div id="secondFilter-content-wrapper" class=".container-fluid filters">
+                    <div class="row align-items-center filter-title" style="margin-left:15px; margin-right:15px">
+                        <div id="sf-title-content-wrapper" class="col-xl-3 col-md-4 col-12 .align-content-center">
+                            <div class="align-self-stretch ">
+                                <div class="p-2 text-left"  >
+                                    <p class="h4" >Sistema responsável:</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="sf-options-content-wrapper" class="col-xl-9 col-md-8 col-12 filter-options">
+                            <div class="d-flex flex-column">
+                                <div id="sf-option1-content-wrapper" class="p-2 bd-highlight" style="width: auto;"> 
+                                    <div class="d-flex flex-row">
+                                    <div class="p-2">
+                                        <input id="sf-option1-checkbox" type="checkbox" class="form-control form-control-ff-cbox filter-checkbox" aria-label="Sizing example input" aria-describedby="inputGroup-sizing-sm;" >
+                                    </div>
+                                    <div class="p-2"></div>
+                                        <p>XER</p>
+                                    </div>
+                                </div>
+                                <div id="sf-option2-content-wrapper" class="p-2 bd-highlight" style="width: auto;"> 
+                                    <div class="d-flex flex-row">
+                                    <div class="p-2">
+                                        <input id="sf-option2-checkbox" type="checkbox" class="form-control form-control-ff-cbox filter-checkbox" aria-label="Sizing example input" aria-describedby="inputGroup-sizing-sm;" >
+                                    </div>
+                                    <div class="p-2"></div>
+                                        <p>COP</p>
+                                    </div>
+                                </div>                          
+                            </div>  
+                        </div>
+                    </div>
+                </div> 
+            <!--Main Page - FIM - SEGUNDO FILTRO -->
+            <!-- ================================================================================================= -->
+            <!--Main Page - INICIO - TERCEIRO FILTRO -->
+                <div id="thirdFilter-content-wrapper" class=".container-fluid filters">
+                    <div class="row align-items-center filter-title" style="margin-left:15px; margin-right:15px">
+                        <div id="tf-title-content-wrapper" class="col-xl-3 col-md-4 col-12 .align-content-center">
+                            <div class="align-self-stretch ">
+                                <div class="p-2 text-left"  >
+                                    <p class="h4" >Prefixos GECOR:</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="tf-options-content-wrapper" class="col-xl-9 col-md-8 col-12 filter-options">
+                            <div class="row">
+                            {{#each prefixos as |prefixo|}}
+                                <div class="col-xl-2 col-md-3 col-6">
+                                    <div id="tf-optionPref-content-wrapper" class="p-2 bd-highlight" style="width: auto;"> 
+                                        <div class="d-flex flex-column">
+                                            <div class="d-flex flex-row">
+                                                <div class="p-2">
+                                                    <input id="{{prefixo.prefixos}}" type="checkbox" class="form-control form-control-ff-cbox filter-checkbox pref-checkboxes" aria-label="Sizing example input" aria-describedby="inputGroup-sizing-sm;">                                                  
+                                                </div>
+                                                <p class="numberPref pref{{prefixo.prefixos}}">&MediumSpace;{{prefixo.prefixos}}</p>
+                                                
+                                            </div>
+                                        </div>  
+                                    </div>
+                                </div>
+                            {{/each}}
+                            </div>                
+                        </div>
+                    </div>
+                </div> 
+            <!--Main Page - FIM - TERCEIRO FILTRO -->
+            <!-- ================================================================================================= -->
+            <!--Main Page - INICIO - QUARTO FILTRO -->
+                <div id="4Filter-content-wrapper" class=".container-fluid filters">
+                    <div  class="row align-items-center filter-title" style="margin-left:15px; margin-right:15px">
+                        <div id="4f-title-content-wrapper" class="col-xl-3 col-md-4 col-12 .align-content-center">
+                            <div class="align-self-stretch ">
+                                <div class="p-2 text-left"  >
+                                    <p class="h4" >Situação vínculo da operação:</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="4f-options-content-wrapper" class="col-xl-9 col-md-8 col-12 filter-options">
+                            <div class="d-flex flex-column">
+                                <div id="4f-option1-content-wrapper" class="p-2 bd-highlight" style="width: auto;"> 
+                                    <div class="d-flex flex-row">
+                                    <div class="p-2">
+                                        <input id="4f-option1-checkbox" type="checkbox" class="form-control form-control-ff-cbox filter-checkbox" aria-label="Sizing example input" aria-describedby="inputGroup-sizing-sm;" >
+                                    </div>
+                                    <div class="p-2"></div>
+                                        <p>Operação não vinculada</p>
+                                    </div>
+                                </div>
+                                <div id="4f-option2-content-wrapper" class="p-2 bd-highlight" style="width: auto;"> 
+                                    <div class="d-flex flex-row">
+                                    <div class="p-2">
+                                        <input id="4f-option2-checkbox" type="checkbox" class="form-control form-control-ff-cbox filter-checkbox" aria-label="Sizing example input" aria-describedby="inputGroup-sizing-sm;" >
+                                    </div>
+                                    <div class="p-2"></div>
+                                        <p>Vinculada</p>
+                                    </div>
+                                </div>
+                                <div id="4f-option3-content-wrapper" class="p-2 bd-highlight" style="width: auto;"> 
+                                    <div class="d-flex flex-row">
+                                    <div class="p-2">
+                                        <input id="4f-option3-checkbox" type="checkbox" class="form-control form-control-ff-cbox filter-checkbox" aria-label="Sizing example input" aria-describedby="inputGroup-sizing-sm;" >
+                                    </div>
+                                    <div class="p-2"></div>
+                                        <p>Vinculada em outro NPJ</p>
+                                    </div>
+                                </div>                             
+                            </div>  
+                        </div>
+                    </div>
+                </div> 
+            <!--Main Page - FIM - QUARTO FILTRO -->
+            <!-- ================================================================================================= -->
+            <!--Main Page - INICIO - QUINTO FILTRO -->
+                <div id="5Filter-content-wrapper" class=".container-fluid filters">
+                    <div class="row align-items-center filter-title" style="margin-left:15px; margin-right:15px">
+                        <div id="5f-title-content-wrapper" class="col-xl-3 col-md-4 col-12 .align-content-center">
+                            <div class="align-self-stretch ">
+                                <div class="p-2 text-left"  >
+                                    <p class="h4" >Acordo registrado no portal:</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="5f-options-content-wrapper" class="col-xl-9 col-md-8 col-12 filter-options">
+                            <div class="d-flex flex-column">
+                                <div id="5f-option1-content-wrapper" class="p-2 bd-highlight" style="width: auto;"> 
+                                    <div class="d-flex flex-row">
+                                    <div class="p-2">
+                                        <input id="5f-option1-checkbox" type="checkbox" class="form-control form-control-ff-cbox filter-checkbox" aria-label="Sizing example input" aria-describedby="inputGroup-sizing-sm;" >
+                                    </div>
+                                    <div class="p-2"></div>
+                                        <p>Sim</p>
+                                    </div>
+                                </div>
+                                <div id="5f-option2-content-wrapper" class="p-2 bd-highlight" style="width: auto;"> 
+                                    <div class="d-flex flex-row">
+                                    <div class="p-2">
+                                        <input id="5f-option2-checkbox" type="checkbox" class="form-control form-control-ff-cbox filter-checkbox" aria-label="Sizing example input" aria-describedby="inputGroup-sizing-sm;">
+                                    </div>
+                                    <div class="p-2"></div>
+                                        <p>Não</p>
+                                    </div>
+                                </div>
+                                {{!-- <div id="5f-option3-content-wrapper" class="p-2 bd-highlight" style="width: auto;"> 
+                                    <div class="d-flex flex-row">
+                                    <div class="p-2">
+                                        <input id="5f-option3-checkbox" type="checkbox" class="form-control form-control-ff-cbox filter-checkbox" aria-label="Sizing example input" aria-describedby="inputGroup-sizing-sm;">
+                                    </div>
+                                    <div class="p-2"></div>
+                                        <p>Registros duplicados</p>
+                                    </div>
+                                </div>                               --}}
+                            </div>  
+                        </div>
+                    </div>
+                </div> 
+            <!--Main Page - FIM - QUINTO FILTRO -->
+            <!-- ================================================================================================= -->
+            <!--Main Page - INICIO - SEXTO FILTRO -->
+                <div id="6Filter-content-wrapper" class=".container-fluid filters">
+                    <div class="row align-items-center filter-title" style="margin-left:15px; margin-right:15px">
+                        <div id="6f-title-content-wrapper" class="col-xl-3 col-md-4 col-12 .align-content-center">
+                            <div class="align-self-stretch ">
+                                <div class="p-2 text-left"  >
+                                    <p class="h4" >Outros:</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="6f-options-content-wrapper" class="col-xl-9 col-md-8 col-12 filter-options">
+                            <div class="d-flex flex-column">
+                                <div class="p-2">
+                                    <div class="d-flex flex-wrap" style="border: rgb(173, 173, 173) 2px solid;padding:5px">
+                                        <div class="align-self-center">
+                                            <p class="h-4">Duplicados</p>
+                                        </div>
+                                        <div class="p-2">
+                                            <div class="d-flex flex-column">
+                                                <div id="6f-option1-content-wrapper" class="p-2 bd-highlight" style="width: auto;"> 
+                                                    <div class="d-flex flex-row">
+                                                        <div class="p-2">
+                                                            <input id="6f-option1-checkbox" type="radio" class="form-control form-control-ff-cbox filter-checkbox" name="duplicadosRadio" value="duplicadoSim" >
+                                                        </div>
+                                                        <div class="p-2">
+                                                            <label for="duplicadoSim">Sim (Desabilita e deseleciona opções <strong>Acordo Registrado no Portal</strong>)</label>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div id="6f-option2-content-wrapper" class="p-2 bd-highlight" style="width: auto;"> 
+                                                    <div class="d-flex flex-row">
+                                                        <div class="p-2">
+                                                            <input id="6f-option2-checkbox" type="radio" class="form-control form-control-ff-cbox filter-checkbox" name="duplicadosRadio" value="duplicadoNao" checked>
+                                                        </div>
+                                                        <div class="p-2">
+                                                            <label for="duplicadoNao">Não</label>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="p-2">
+                                    <div class="d-flex flex-wrap" style="border: rgb(173, 173, 173) 2px solid;padding:5px">
+                                        <div class="align-self-center">
+                                            <p class="h-4">Analisados</p>
+                                        </div>
+                                        <div class="p-2">
+                                            <div id="6f-option3-content-wrapper" class="p-2 bd-highlight" style="width: auto;"> 
+                                                    <div class="d-flex flex-row">
+                                                        <div class="p-2">
+                                                            <input id="6f-option3-checkbox" type="radio" class="form-control form-control-ff-cbox filter-checkbox" name="analisadosRadio" value="analisadosSim" >
+                                                        </div>
+                                                        <div class="p-2">
+                                                            <label for="analisadosSim">Sim</label>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div id="6f-option4-content-wrapper" class="p-2 bd-highlight" style="width: auto;"> 
+                                                    <div class="d-flex flex-row">
+                                                        <div class="p-2">
+                                                            <input id="6f-option4-checkbox" type="radio" class="form-control form-control-ff-cbox filter-checkbox" name="analisadosRadio" value="analisadosNao" checked>
+                                                        </div>
+                                                        <div class="p-2">
+                                                            <label for="analisadosNao">Não</label>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div> 
+            <!--Main Page - FIM - SEXTO FILTRO -->
+            </div>
+        <!--Main Page - FIM - FILTROS -->
+        <!-- ================================================================================================= -->
+        <!--Main Page - INICIO - TOTAL PROTOCOLOS -->
+                <div id="mp-totalProt-content-wrapper" class=".container-fluid">
+                    <h3 style="color: black; padding-left: .5rem; padding-top: 2px; font-weight: 600; letter-spacing: 1px; margin-bottom: 0; border-bottom:0;">Total de protocolos na base:</h3>
+                    <div class=".container-fluid totalProtocolos">
+                        <div class="row align-items-center" style="margin-left:15px; margin-right:15px">
+                            <div id="fluxo-number-content-wrapper" class="col-md-1 col-sm-2 col-12 .align-content-center">
+                                <div class="align-self-stretch ">
+                                    <div class="p-2"  >
+                                        <p id="registrosFluxo"><strong>0</strong></p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div id="fluxo-text-content-wrapper" class="col-md-11 col-sm-10 col-12 .align-content-center">
+                                <div class="align-self-stretch ">
+                                    <div class="p-2 text-left"  >
+                                        <p>registro(s) para abertura de protocolos de <strong>FLUXO</strong></p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class=".container-fluid totalProtocolos">
+                        <div class="row align-items-center total-protocolos-content-wraper" style="margin-left:15px; margin-right:15px">
+                            <div id="estoque-number-content-wrapper" class="col-md-1 col-sm-2 col-12 .align-content-center">
+                                <div class="align-self-stretch ">
+                                    <div class="p-2 text-right"  >
+                                        <p id="registrosEstoque"><strong>0</strong></p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div id="estoque-text-content-wrapper" class="col-md-11 col-sm-10 col-12 .align-content-center">
+                                <div class="align-self-stretch ">
+                                    <div class="p-2 text-left"  >
+                                        <p>registro(s) para abertura de protocolos de <strong>ESTOQUE</strong></p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+        <!--Main Page - FIM - TOTAL PROTOCOLOS -->
+        <!-- ================================================================================================= -->
+        <!--Main Page - INICIO -  FLUXO ESTOQUE -->
+                <div id="mp-fluxoEstoque-content-wrapper" class=".container-fluid">
+                        <div class=".container-fluid">
+                            <div class="row align-items-center" style="margin-left: 0;">
+                                <div class="col-xl-1 col-md-2 .align-content-center" style="padding-left: 0;">
+                                    <div class="align-self-stretch" style="padding-left: 0;">
+                                        <div class="p-2 text-left" style="padding-left: 0;">
+                                            <p class="h3" style="color: black; padding-left: 0; padding-top: 2px; font-weight: 600; letter-spacing: 1px;">Gerar<p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-xl-11 col-md-10 .align-content-center">
+                                    <div class="d-flex flex-column">
+                                        <div id="mp-fluxoEstoque-qtdeFluxo-contentWrapper" class="d-flex flex-row">
+                                            <div class="p-2 text-left">
+                                                <form style="width: 100px;">
+                                                    <div class="form-group" style="margin-top: 2px; margin-bottom:2px;">
+                                                        <input type="text" pattern= "[0-9]{0,4}" class="form-control filter-checkbox" id="fluxoNumber" placeholder="1..999" maxlength="4" style="text-align: center;">
+                                                    </div>
+                                                </form>
+                                            </div>
+                                            <div class="row align-items-center">
+                                                <div class="col-12 .align-content-center">
+                                                    <div class="align-self-stretch">
+                                                        <div class="p-2 text-left">
+                                                            <p class="">Informar a quantidade de protocolos de <strong>FLUXO</strong> para serem abertos</p>  
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div id="mp-fluxoEstoque-qtdeEstoque-contentWrapper" class="d-flex flex-row">
+                                            <div class="p-2 text-left">
+                                                <form style="width: 100px;">
+                                                    <div class="form-group" style="margin-top: 2px; margin-bottom:2px;">
+                                                        <input type="text" pattern= "\d{0,4}" class="form-control filter-checkbox" maxlength="4" id="estoqueNumber" placeholder="1..999" style="text-align: center;">
+                                                    </div>
+                                                </form>
+                                            </div>
+                                            <div class="row align-items-center">
+                                                <div class="col-12 .align-content-center">
+                                                    <div class="align-self-stretch">
+                                                        <div class="p-2 text-left">
+                                                             <p class="">Informar a quantidade de protocolos de <strong>ESTOQUE</strong> para serem abertos</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                </div>
+        <!--Main Page -FIM - FLUXO ESTOQUE -->
+        <!-- ================================================================================================= -->
+        <!--Main Page - INICIO - BOTÕES -->
+            <div id="mp-buttons-content-wrapper" class=".container-fluid" style="margin-bottom: 60px;">
+                <div class="d-flex justify-content-center" style="margin-top: 5px; margin-bottom: 5px">
+                    <div class="p-2">
+                        <button id="createNewConfBtn" type="button" class="btn btn-primary">Criar nova</button>
+                    </div>
+                    <div class="p-2">
+                        <button id="saveNewConfBtn" type="button" class="btn btn-success">Salvar</button>
+                    </div>
+                    <div class="p-2">
+                        <button id="clearConfBtn" type="button" class="btn btn-secondary">Voltar configuração atual</button>
+                    </div>
+                    <div class="p-2">
+                        <button id="generateExcel" type="button" class="btn btn-light"><span id="excel-icon"></span>Gerar planilha</button>
+                    </div>
+                </div>
+            </div>
+        <!--Main Page -FIM - FLUXO ESTOQUE -->
+        <!-- ================================================================================================= -->
+        
+        </div>
+        <footer class="">{{>footer}}</footer>
+  
+    
+</body>
+<script src="/js/jquery/jquery.slim.min.js"></script>
+<script src="/js/bootstrap/bootstrap.bundle.min.js"></script>
+<script src="/js/mainPage/uiCtrl.js"></script>
+<script src="/js/mainPage/appCtrl.js"></script>
+<script src="/js/mainPage/dataCtrl.js"></script>
+<script src="/js/mainPage/main.js"></script>
+</html>

@@ -1,0 +1,143 @@
+CREATE DEFINER=`root`@`%` PROCEDURE `creditoPosCop`.`carregarProtocolosNaBaseQuarentena`()
+BEGIN
+	INSERT IGNORE INTO creditoPosCop.quarentenaPosCop (VLDC_REG_ACRD,NR_UNCO_CTR_OPR,MCI,NR_UNCO_CTR_VCLD,SG_SIS_RSP_CDU_VCLD,CD_PRF_DEPE_CDU_VCLD,NR_PRC,
+													TX_EST_PRC,DT_AJZT,DT_BXA_PRC,NR_PRC_VCLD,TX_EST_VCLD,DT_AJZT_VCLD,TX_NR_PRC_VCLD,QTD_ADV)
+	SELECT
+		t.VLDC_REG_ACRD,
+		t.NR_UNCO_CTR_OPR,
+		t.MCI,
+		t.NR_UNCO_CTR_VCLD,
+		t.SG_SIS_RSP_CDU_VCLD,
+		t.CD_PRF_DEPE_CDU_VCLD,
+		t.NR_PRC,
+		t.TX_EST_PRC,
+		t.DT_AJZT,
+		t.DT_BXA_PRC,
+		t.NR_PRC_VCLD,
+		t.TX_EST_VCLD,
+		t.DT_AJZT_VCLD,
+		t.TX_NR_PRC_VCLD,
+		t.QTD_ADV
+	FROM (SELECT 
+				t1.VLDC_REG_ACRD,
+				t1.NR_UNCO_CTR_OPR,
+				t1.MCI,
+				t1.NR_UNCO_CTR_VCLD,
+				t1.SG_SIS_RSP_CDU_VCLD,
+				t1.CD_PRF_DEPE_CDU_VCLD,
+				t1.NR_PRC,
+				t1.TX_EST_PRC,
+				t1.DT_AJZT,
+				t1.DT_BXA_PRC,
+				t1.NR_PRC_VCLD,
+				t1.TX_EST_VCLD,
+				t1.DT_AJZT_VCLD,
+				t1.TX_NR_PRC_VCLD,
+				t1.QTD_ADV,
+				count(t1.NR_UNCO_CTR_VCLD) as conta
+			FROM creditoPosCop.diraoNovaBaseMigracao t1
+			GROUP BY t1.NR_UNCO_CTR_VCLD,t1.NR_UNCO_CTR_OPR) t
+	WHERE t.conta = 1;
+	INSERT IGNORE INTO creditoPosCop.quarentenaPosCop (VLDC_REG_ACRD,NR_UNCO_CTR_OPR,MCI,NR_UNCO_CTR_VCLD,SG_SIS_RSP_CDU_VCLD,CD_PRF_DEPE_CDU_VCLD,NR_PRC,
+													TX_EST_PRC,DT_AJZT,DT_BXA_PRC,NR_PRC_VCLD,TX_EST_VCLD,DT_AJZT_VCLD,TX_NR_PRC_VCLD,QTD_ADV)
+	SELECT
+		t.VLDC_REG_ACRD,
+		t.NR_UNCO_CTR_OPR,
+		t.MCI,
+		t.NR_UNCO_CTR_VCLD,
+		t.SG_SIS_RSP_CDU_VCLD,
+		t.CD_PRF_DEPE_CDU_VCLD,
+		t.NR_PRC,
+		t.TX_EST_PRC,
+		t.DT_AJZT,
+		t.DT_BXA_PRC,
+		t.NR_PRC_VCLD,
+		t.TX_EST_VCLD,
+		t.DT_AJZT_VCLD,
+		t.TX_NR_PRC_VCLD,
+		t.QTD_ADV
+	FROM (SELECT 
+				9 as VLDC_REG_ACRD,
+				t1.NR_UNCO_CTR_OPR,
+				t1.MCI,
+				t1.NR_UNCO_CTR_VCLD,
+				t1.SG_SIS_RSP_CDU_VCLD,
+				t1.CD_PRF_DEPE_CDU_VCLD,
+				t1.NR_PRC,
+				t1.TX_EST_PRC,
+				t1.DT_AJZT,
+				t1.DT_BXA_PRC,
+				t1.NR_PRC_VCLD,
+				t1.TX_EST_VCLD,
+				t1.DT_AJZT_VCLD,
+				t1.TX_NR_PRC_VCLD,
+				t1.QTD_ADV,
+				count(t1.NR_UNCO_CTR_VCLD) as conta
+			FROM creditoPosCop.diraoNovaBaseMigracao t1
+			GROUP BY t1.NR_UNCO_CTR_VCLD,t1.NR_UNCO_CTR_OPR) t
+	WHERE t.conta > 1;
+	UPDATE creditoPosCop.quarentenaPosCop 
+	SET quarentenaAte = (SELECT creditoPosCop.findQuarentineUntilDate(insertedIn))
+	WHERE quarentenaAte IS NULL;
+	INSERT INTO creditoPosCop.posCopLog (`user`,`description`) VALUES ('SAS','Atualização base quarentenaPosCop');
+-- ===========================================================================================================================
+-- ===========================================================================================================================
+-- 								TRATAMENTO DE REGISTROS DUPLICADOS COM DATA DE IMPORTACAO DISTINTAS
+-- ===========================================================================================================================
+-- ===========================================================================================================================
+/*Busca registros na base quarentenaPosCop que foram duplicados na base por terem sido inseridos em dias distintos */
+/*e cria tabela temporária regDuplicados*/
+DROP TABLE IF EXISTS creditoPosCop.regDuplicados;
+CREATE TABLE creditoPosCop.regDuplicados AS
+SELECT 
+	qpc .*
+FROM 
+creditoPosCop.quarentenaPosCop qpc 
+INNER JOIN creditoPosCop.quarentenaPosCop t on t.NR_UNCO_CTR_OPR = qpc.NR_UNCO_CTR_OPR AND 
+													t.mci = qpc.mci AND t.NR_UNCO_CTR_VCLD = qpc.NR_UNCO_CTR_VCLD AND 
+													t.SG_SIS_RSP_CDU_VCLD = qpc.SG_SIS_RSP_CDU_VCLD AND 
+													t.CD_PRF_DEPE_CDU_VCLD = qpc.CD_PRF_DEPE_CDU_VCLD AND 
+													t.NR_PRC = qpc.NR_PRC AND 
+													t.QTD_ADV = qpc.QTD_ADV
+WHERE t.TX_NR_PRC_VCLD <> qpc.TX_NR_PRC_VCLD AND qpc.protCriado NOT IN (1)/*OR qpc.VLDC_REG_ACRD = 9*/; 
+/*Deleta registros da base quarentenaPosCop que foram duplicados na base por terem sido inseridos em dias distintos*/
+DELETE 
+	qpc .*
+FROM 
+creditoPosCop.quarentenaPosCop qpc 
+INNER JOIN creditoPosCop.quarentenaPosCop t on t.NR_UNCO_CTR_OPR = qpc.NR_UNCO_CTR_OPR AND 
+													t.mci = qpc.mci AND t.NR_UNCO_CTR_VCLD = qpc.NR_UNCO_CTR_VCLD AND 
+													t.SG_SIS_RSP_CDU_VCLD = qpc.SG_SIS_RSP_CDU_VCLD AND 
+													t.CD_PRF_DEPE_CDU_VCLD = qpc.CD_PRF_DEPE_CDU_VCLD AND 
+													t.NR_PRC = qpc.NR_PRC AND 
+													t.QTD_ADV = qpc.QTD_ADV
+WHERE t.TX_NR_PRC_VCLD <> qpc.TX_NR_PRC_VCLD AND qpc.protCriado NOT IN (1)/*OR qpc.VLDC_REG_ACRD = 9*/;
+/*Insere registros da base temporária regDuplicados de forma única na base quarenteaPosCop*/
+INSERT INTO quarentenaPosCop 
+SELECT 
+	9 as VLDC_REG_ACRD,
+	rd.NR_UNCO_CTR_OPR,
+	rd.MCI ,
+	rd.NR_UNCO_CTR_VCLD ,
+	rd.SG_SIS_RSP_CDU_VCLD ,
+	rd.CD_PRF_DEPE_CDU_VCLD ,
+	rd.NR_PRC,
+	rd.TX_EST_PRC ,
+	rd.DT_AJZT ,
+	rd.DT_BXA_PRC ,
+	rd.NR_PRC_VCLD ,
+	rd.TX_EST_VCLD ,
+	rd.DT_AJZT_VCLD ,
+	rd.TX_NR_PRC_VCLD ,
+	rd.QTD_ADV ,
+	rd.insertedIn ,
+	rd.quarentenaAte ,
+	rd.protCriado 
+FROM creditoPosCop.regDuplicados rd
+GROUP BY rd.NR_UNCO_CTR_OPR,
+	rd.NR_UNCO_CTR_VCLD ,
+	rd.CD_PRF_DEPE_CDU_VCLD ,
+	rd.SG_SIS_RSP_CDU_VCLD ,
+	rd.NR_PRC ,
+	rd.QTD_ADV;	
+END
